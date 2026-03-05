@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+
+    <!-- ═══ SECURITY HEADERS ═══ -->
+    <!-- Content Security Policy: restricts what resources can load -->
+    <!-- CSP is set by Express/Helmet in production; this meta tag is for local dev only -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self';
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+      font-src 'self' https://fonts.gstatic.com;
+      img-src 'self' data: blob:;
+      connect-src 'self' http://localhost:3001;
+      media-src 'self' blob:;
+      object-src 'none';
+      frame-src 'none';
+      base-uri 'self';
+      form-action 'self';
+    " />
+
+    <!-- Prevent MIME type sniffing -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+
+    <!-- Prevent clickjacking -->
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+
+    <!-- Control referrer information leakage -->
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+
+    <title>Ɔkasa! — Mother Tongue Tutor</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

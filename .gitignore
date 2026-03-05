@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+server/node_modules/
+
+# Build output
+dist/
+
+# Environment files (secrets)
+server/.env
+
+# SQLite database files (created at runtime)
+server/okasa.db
+server/okasa.db-shm
+server/okasa.db-wal
+
+# Uploaded files
+server/uploads/*
+!server/uploads/.gitkeep
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Claude local files
+.claude/
