@@ -270,6 +270,99 @@ const ParentAvatar = ({ name = "Parent", size = 160, speaking = false, mood = "n
   );
 };
 
+/* ── Video Avatar (AI lip-sync playback) ── */
+const VideoAvatar = ({ phraseId, videoUrl, audioUrl, videoStatus, size = 160, name = "Parent", fallbackSpeaking, fallbackMood, hasAvatar, onVideoEnd }) => {
+  const videoRef = useRef(null);
+  const audioRef = useRef(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+
+  // Determine if we have a real video or just TTS audio
+  const hasVideo = videoStatus === "ready" && videoUrl;
+  const hasTTSOnly = videoStatus === "tts_only" && audioUrl;
+
+  useEffect(() => {
+    // Auto-play when mounted
+    if (hasVideo && videoRef.current) {
+      videoRef.current.play().catch(() => setVideoError(true));
+    } else if (hasTTSOnly && audioRef.current) {
+      audioRef.current.play().catch(() => {});
+    }
+  }, [hasVideo, hasTTSOnly, videoUrl, audioUrl]);
+
+  // If no media or errored, fall back to cartoon avatar
+  if ((!hasVideo && !hasTTSOnly) || videoError) {
+    return <ParentAvatar size={size} uploaded={hasAvatar} name={name} speaking={fallbackSpeaking} mood={fallbackMood} showLabel={false} ring={true} />;
+  }
+
+  const glowColor = isPlaying ? "rgba(102,224,163,0.6)" : "rgba(79,195,247,0.3)";
+  const ringColor = isPlaying ? C.mint : C.sky;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
+      <div style={{ position: "relative", width: size, height: size }}>
+        {/* Glow ring */}
+        <div style={{
+          position: "absolute", inset: -10, borderRadius: "50%",
+          background: `radial-gradient(circle, ${glowColor} 0%, transparent 70%)`,
+          animation: isPlaying ? "avatarPulse 1.2s ease-in-out infinite" : "none",
+        }} />
+        <div style={{
+          position: "absolute", inset: -5, borderRadius: "50%",
+          border: `3px solid ${ringColor}`,
+          animation: isPlaying ? "ringPulse 1.2s ease-in-out infinite" : "none",
+        }} />
+
+        {hasVideo ? (
+          /* Video element in circular frame */
+          <video
+            ref={videoRef}
+            src={videoUrl}
+            style={{
+              width: size, height: size, borderRadius: "50%", objectFit: "cover",
+              boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
+            }}
+            playsInline
+            onPlay={() => setIsPlaying(true)}
+            onEnded={() => { setIsPlaying(false); if (onVideoEnd) onVideoEnd(); }}
+            onError={() => setVideoError(true)}
+          />
+        ) : (
+          /* TTS-only: show cartoon avatar face + play audio */
+          <>
+            <ParentAvatar size={size} uploaded={hasAvatar} name={name} speaking={isPlaying} mood={isPlaying ? "neutral" : "celebrate"} showLabel={false} ring={false} />
+            <audio
+              ref={audioRef}
+              src={audioUrl}
+              onPlay={() => setIsPlaying(true)}
+              onEnded={() => { setIsPlaying(false); if (onVideoEnd) onVideoEnd(); }}
+            />
+          </>
+        )}
+
+        {/* AI VIDEO badge */}
+        <div style={{
+          position: "absolute", top: 2, right: 2,
+          background: "rgba(255,255,255,0.95)", backdropFilter: FX.glassBlur,
+          padding: "3px 8px", borderRadius: R.pill, ...T.label, fontSize: 9, color: C.bgApp,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+        }}>{hasVideo ? "🎬 AI" : "🔊 AI"}</div>
+
+        {isPlaying && (
+          <div style={{
+            position: "absolute", bottom: 4, right: 4, display: "flex", alignItems: "center", gap: 4,
+            background: C.mint, padding: "4px 10px", borderRadius: 12,
+            boxShadow: `0 2px 8px ${C.mint}60`, animation: "avatarPulse 1.5s ease-in-out infinite",
+          }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: C.white }} />
+            <span style={{ fontSize: 10, fontWeight: 900, color: C.white }}>LIVE</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
 /* ── Speech Bubble ── */
 const SpeechBubble = ({ text, color = C.white, textColor = C.navy, size = "md", animate = true, dark = false }) => {
   const paddings = { sm: "10px 16px", md: "14px 22px", lg: "18px 28px" };
@@ -404,8 +497,16 @@ const XPBadge = ({ xp, dark = false }) => (
 export default function OkasaApp() {
   const [screen, setScreen] = useState("splash");
   const [setupStep, setSetupStep] = useState(1);
-  const [profile, setProfile] = useState({ parentName: "", childName: "", language: "Twi (Ashanti)", videoUploaded: false, avatarReady: false });
+  const [profile, setProfile] = useState({ parentName: "", childName: "", language: "Twi (Ashanti)", videoUploaded: false, avatarReady: false, avatarType: "cartoon" });
   const [isGenerating, setIsGenerating] = useState(false);
+  // Avatar video generation state
+  const [sourceVideoId, setSourceVideoId] = useState(null);
+  const [generationJobId, setGenerationJobId] = useState(null);
+  const [generationProgress, setGenerationProgress] = useState({ total: 0, completed: 0, percent: 0, status: "idle" });
+  const [avatarVideos, setAvatarVideos] = useState({}); // { phraseId: { status, videoUrl, audioUrl } }
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [videoFile, setVideoFile] = useState(null);
+  const [videoPreviewUrl, setVideoPreviewUrl] = useState(null);
   const [currentLesson, setCurrentLesson] = useState(null);
   const [phraseIdx, setPhraseIdx] = useState(0);
   const [phase, setPhase] = useState("watch");
@@ -483,6 +584,63 @@ export default function OkasaApp() {
       });
   }, [isAuthenticated]);
 
+  // ── Poll generation status ──
+  useEffect(() => {
+    if (!generationJobId || generationProgress.status === "completed" || generationProgress.status === "failed") return;
+    const interval = setInterval(async () => {
+      try {
+        const data = await api.getGenerationStatus();
+        setGenerationProgress({ total: data.total, completed: data.completed, failed: data.failed || 0, percent: data.percent, status: data.status });
+        if (data.status === "completed") {
+          clearInterval(interval);
+          setProfile(p => ({ ...p, avatarReady: true, avatarType: "ai_video" }));
+          setIsGenerating(false);
+          // Fetch all video URLs
+          const videosData = await api.getAvatarVideos();
+          const videoMap = {};
+          (videosData.videos || []).forEach(v => {
+            videoMap[v.phraseId] = {
+              status: v.status,
+              videoUrl: v.status === "ready" ? api.getAvatarVideoUrl(v.phraseId) : null,
+              audioUrl: v.audioFilename ? api.getAvatarAudioUrl(v.phraseId) : null,
+            };
+          });
+          setAvatarVideos(videoMap);
+          setSetupStep(4);
+        }
+      } catch (err) { console.error("Generation poll error:", err); }
+    }, 3000);
+    return () => clearInterval(interval);
+  }, [generationJobId, generationProgress.status]);
+
+  // ── Fetch avatar videos on login (if user has AI avatar) ──
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    api.getAvatarVideos()
+      .then((data) => {
+        if (data.videos && data.videos.length > 0) {
+          const videoMap = {};
+          data.videos.forEach(v => {
+            videoMap[v.phraseId] = {
+              status: v.status,
+              videoUrl: (v.status === "ready") ? api.getAvatarVideoUrl(v.phraseId) : null,
+              audioUrl: v.audioFilename ? api.getAvatarAudioUrl(v.phraseId) : null,
+            };
+          });
+          setAvatarVideos(videoMap);
+          if (Object.values(videoMap).some(v => v.status === "ready" || v.status === "tts_only")) {
+            setProfile(p => ({ ...p, avatarType: "ai_video" }));
+          }
+        }
+      })
+      .catch(() => {});
+  }, [isAuthenticated]);
+
+  // ── Cleanup video preview blob URL ──
+  useEffect(() => {
+    return () => { if (videoPreviewUrl) URL.revokeObjectURL(videoPreviewUrl); };
+  }, [videoPreviewUrl]);
+
   // Use API lessons if available, otherwise fallback to hardcoded
   const activeLessons = apiLessons || LESSONS;
 
@@ -524,10 +682,14 @@ export default function OkasaApp() {
     api.clearAuth();
     setIsAuthenticated(false);
     setScreen("splash");
-    setProfile({ parentName: "", childName: "", language: "Twi (Ashanti)", videoUploaded: false, avatarReady: false });
+    setProfile({ parentName: "", childName: "", language: "Twi (Ashanti)", videoUploaded: false, avatarReady: false, avatarType: "cartoon" });
     setProgress({});
     setTotalXP(0);
     setApiLessons(null);
+    setAvatarVideos({});
+    setSourceVideoId(null);
+    setGenerationJobId(null);
+    setGenerationProgress({ total: 0, completed: 0, percent: 0, status: "idle" });
   };
 
   // Rate limiters — prevent abuse of speech synthesis and quiz actions
@@ -811,22 +973,81 @@ export default function OkasaApp() {
             </div>
           </div>
         )}
-        {/* Step 2 */}
+        {/* Step 2 — Video Upload */}
         {setupStep === 2 && (
           <div style={{ width: "100%", textAlign: "center", animation: "slideUp 0.4s ease" }}>
             <ParentAvatar size={120} uploaded={false} showLabel={false} ring={false} />
             <h2 style={{ ...T.subhead, color: C.textPrimary, margin: "16px 0 4px" }}>Record yourself</h2>
             <p style={{ ...T.body, color: C.textSecondary, fontSize: 14, marginBottom: 28, lineHeight: 1.6 }}>
-              Speak naturally for 30 seconds — greet {profile.childName}, count, say family names.
+              Speak naturally for 10-30 seconds — greet {profile.childName}, count, say family names.
             </p>
-            <GlassCard dark onClick={() => { setProfile(p => ({ ...p, videoUploaded: true })); setSetupStep(3); }}
-              style={{ border: `2px dashed rgba(255,255,255,0.2)`, padding: "44px 24px", cursor: "pointer" }}>
-              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 72, height: 72, borderRadius: "50%", background: `linear-gradient(135deg, ${C.accentCoral}, ${C.energy})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, color: C.textPrimary, boxShadow: FX.pillShadow }}>📹</div>
-                <p style={{ ...T.pill, color: C.textPrimary, margin: 0, fontSize: 16 }}>Tap to Record</p>
-                <p style={{ ...T.body, fontSize: 12, color: C.textMuted, margin: 0 }}>or upload MP4 / MOV</p>
+
+            {/* Video preview (after file selected) */}
+            {videoPreviewUrl && (
+              <GlassCard dark style={{ padding: 0, marginBottom: 16, overflow: "hidden", borderRadius: R.cardMd }}>
+                <video src={videoPreviewUrl} controls playsInline
+                  style={{ width: "100%", maxHeight: 280, objectFit: "cover", borderRadius: R.cardMd }} />
+                <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <p style={{ ...T.body, fontSize: 13, color: C.textSecondary, margin: 0 }}>
+                    {videoFile?.name} ({(videoFile?.size / (1024 * 1024)).toFixed(1)}MB)
+                  </p>
+                  <button onClick={() => { setVideoFile(null); setVideoPreviewUrl(null); setUploadProgress(0); }}
+                    style={{ background: "none", border: "none", color: C.coral, cursor: "pointer", ...T.label, fontSize: 11 }}>
+                    Remove
+                  </button>
+                </div>
+              </GlassCard>
+            )}
+
+            {/* Upload area (before file selected) */}
+            {!videoPreviewUrl && (
+              <GlassCard dark style={{ border: "2px dashed rgba(255,255,255,0.2)", padding: "44px 24px", cursor: "pointer", position: "relative" }}>
+                <input type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    if (file.size > 50 * 1024 * 1024) { alert("Video must be under 50MB"); return; }
+                    setVideoFile(file);
+                    setVideoPreviewUrl(URL.createObjectURL(file));
+                  }}
+                  style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} />
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+                  <div style={{ width: 72, height: 72, borderRadius: "50%", background: `linear-gradient(135deg, ${C.accentCoral}, ${C.energy})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, color: C.textPrimary, boxShadow: FX.pillShadow }}>📹</div>
+                  <p style={{ ...T.pill, color: C.textPrimary, margin: 0, fontSize: 16 }}>Tap to Record or Upload</p>
+                  <p style={{ ...T.body, fontSize: 12, color: C.textMuted, margin: 0 }}>MP4, MOV, or WebM up to 50MB</p>
+                </div>
+              </GlassCard>
+            )}
+
+            {/* Upload progress bar */}
+            {uploadProgress > 0 && uploadProgress < 100 && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ height: 6, borderRadius: R.pill, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                  <div style={{ height: "100%", borderRadius: R.pill, background: C.accentGold, width: `${uploadProgress}%`, transition: "width 0.3s ease" }} />
+                </div>
+                <p style={{ ...T.body, fontSize: 12, color: C.textSecondary, marginTop: 8 }}>Uploading... {uploadProgress}%</p>
               </div>
-            </GlassCard>
+            )}
+
+            {/* Continue button (only when video selected) */}
+            {videoPreviewUrl && uploadProgress === 0 && (
+              <div style={{ marginTop: 20 }}>
+                <BigBtn color={C.sunflower} textColor={C.bgApp} onClick={async () => {
+                  try {
+                    setUploadProgress(1);
+                    const result = await api.uploadVideo(videoFile, setUploadProgress);
+                    setSourceVideoId(result.sourceVideoId);
+                    setProfile(p => ({ ...p, videoUploaded: true }));
+                    setUploadProgress(100);
+                    setTimeout(() => { setUploadProgress(0); setSetupStep(3); }, 500);
+                  } catch (err) {
+                    alert(err.message || "Upload failed. Please try again.");
+                    setUploadProgress(0);
+                  }
+                }}>Upload & Continue →</BigBtn>
+              </div>
+            )}
+
             <GlassCard dark style={{ marginTop: 16, padding: 14, textAlign: "left" }}>
               <p style={{ margin: 0, ...T.body, fontSize: 12, color: C.textSecondary, lineHeight: 1.8 }}>
                 💡 <strong style={{ color: C.accentGold }}>Tips:</strong> Good lighting, face the camera, speak in {profile.language} and English.
@@ -834,7 +1055,7 @@ export default function OkasaApp() {
             </GlassCard>
           </div>
         )}
-        {/* Step 3 */}
+        {/* Step 3 — AI Generation */}
         {setupStep === 3 && (
           <div style={{ width: "100%", textAlign: "center", animation: "slideUp 0.4s ease" }}>
             <div style={{ marginBottom: 24 }}>
@@ -844,20 +1065,50 @@ export default function OkasaApp() {
             <h2 style={{ ...T.subhead, color: C.textPrimary, marginBottom: 8 }}>
               {isGenerating ? "Building your AI twin..." : "Video received!"}
             </h2>
-            <p style={{ ...T.body, color: C.textSecondary, fontSize: 14, marginBottom: 32 }}>
-              {isGenerating ? "Analyzing your face, voice, and expressions..." : `Ready to generate ${pName}'s AI tutor.`}
+            <p style={{ ...T.body, color: C.textSecondary, fontSize: 14, marginBottom: 16 }}>
+              {isGenerating
+                ? `Generating lesson videos (${generationProgress.completed}/${generationProgress.total})...`
+                : `Ready to generate ${pName}'s AI tutor for all lessons.`}
             </p>
+
+            {/* Real progress bar during generation */}
             {isGenerating && (
-              <div style={{ display: "flex", gap: 4, justifyContent: "center", marginBottom: 24 }}>
-                {[0,1,2,3,4].map(i => (
-                  <div key={i} style={{ width: 12, height: 12, borderRadius: "50%", background: C.sunflower, animation: `dotBounce 1.2s ease-in-out ${i * 0.15}s infinite` }} />
-                ))}
-              </div>
+              <>
+                <div style={{ padding: "0 20px", marginBottom: 16 }}>
+                  <div style={{ height: 8, borderRadius: R.pill, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                    <div style={{
+                      height: "100%", borderRadius: R.pill,
+                      background: `linear-gradient(90deg, ${C.accentGold}, ${C.energy})`,
+                      width: `${generationProgress.percent}%`,
+                      transition: "width 0.6s ease",
+                    }} />
+                  </div>
+                  <p style={{ ...T.label, color: C.textMuted, marginTop: 8 }}>
+                    {generationProgress.percent}% complete
+                  </p>
+                </div>
+                <div style={{ display: "flex", gap: 4, justifyContent: "center", marginBottom: 24 }}>
+                  {[0,1,2,3,4].map(i => (
+                    <div key={i} style={{ width: 12, height: 12, borderRadius: "50%", background: C.sunflower, animation: `dotBounce 1.2s ease-in-out ${i * 0.15}s infinite` }} />
+                  ))}
+                </div>
+                <p style={{ ...T.body, fontSize: 12, color: C.textMuted }}>
+                  This may take a few minutes. You can leave this screen open.
+                </p>
+              </>
             )}
+
             {!isGenerating && (
-              <BigBtn color={C.sunflower} onClick={() => {
-                setIsGenerating(true);
-                setTimeout(() => { setIsGenerating(false); setProfile(p => ({ ...p, avatarReady: true })); setSetupStep(4); }, 3500);
+              <BigBtn color={C.sunflower} textColor={C.bgApp} onClick={async () => {
+                try {
+                  setIsGenerating(true);
+                  const result = await api.startGeneration(sourceVideoId);
+                  setGenerationJobId(result.jobId);
+                  setGenerationProgress({ total: result.totalPhrases, completed: 0, percent: 0, status: "processing" });
+                } catch (err) {
+                  setIsGenerating(false);
+                  alert(err.message || "Generation failed. Please try again.");
+                }
               }}>✨ Generate AI Tutor</BigBtn>
             )}
           </div>
@@ -1097,9 +1348,23 @@ export default function OkasaApp() {
       }}>
         {/* Avatar + speech */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, width: "100%" }}>
-          <ParentAvatar size={56} uploaded={hasAvatar} name={pName} speaking={speaking}
-            mood={feedback && phase === "quiz" && picked && currentLesson.phrases[phraseIdx].twi === picked.twi ? "celebrate" : feedback && phase === "repeat" ? "celebrate" : parentMood}
-            showLabel={false} ring={true} />
+          {phase === "watch" && avatarVideos[phrase.id] ? (
+            <VideoAvatar
+              phraseId={phrase.id}
+              videoUrl={avatarVideos[phrase.id]?.videoUrl}
+              audioUrl={avatarVideos[phrase.id]?.audioUrl}
+              videoStatus={avatarVideos[phrase.id]?.status}
+              size={56}
+              name={pName}
+              hasAvatar={hasAvatar}
+              fallbackSpeaking={speaking}
+              fallbackMood={parentMood}
+            />
+          ) : (
+            <ParentAvatar size={56} uploaded={hasAvatar} name={pName} speaking={speaking}
+              mood={feedback && phase === "quiz" && picked && currentLesson.phrases[phraseIdx].twi === picked.twi ? "celebrate" : feedback && phase === "repeat" ? "celebrate" : parentMood}
+              showLabel={false} ring={true} />
+          )}
           <div style={{ flex: 1 }}>
             {phase === "watch" && <SpeechBubble text={`Listen carefully, ${cName}!`} size="sm" animate={false} />}
             {phase === "repeat" && !listening && !feedback && <SpeechBubble text="Now say it back to me!" size="sm" animate={false} />}
@@ -1194,7 +1459,15 @@ export default function OkasaApp() {
 
         {/* Bottom actions */}
         <div style={{ width: "100%", paddingTop: 16, display: "flex", gap: 12 }}>
-          <button onClick={() => speak(phrase.twi)} style={{
+          <button onClick={() => {
+            // If we have TTS audio for this phrase, play it; otherwise use browser TTS
+            if (avatarVideos[phrase.id]?.audioUrl) {
+              const audio = new Audio(avatarVideos[phrase.id].audioUrl);
+              audio.play().catch(() => speak(phrase.twi));
+            } else {
+              speak(phrase.twi);
+            }
+          }} style={{
             flex: 1, padding: 0, height: 48, borderRadius: R.pill,
             border: "1.5px solid rgba(255,255,255,0.15)", background: "transparent",
             ...T.pill, color: C.textPrimary, cursor: "pointer",

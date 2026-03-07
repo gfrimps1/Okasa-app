@@ -153,6 +153,80 @@ export async function uploadAvatar(file) {
   });
 }
 
+// ── Video Avatar endpoints ──
+
+/**
+ * Upload a parent video for AI avatar generation.
+ * Uses XMLHttpRequest for upload progress tracking.
+ */
+export function uploadVideo(file, onProgress) {
+  return new Promise((resolve, reject) => {
+    const formData = new FormData();
+    formData.append("video", file);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `${API_BASE}/avatars/upload-video`);
+    if (authToken) xhr.setRequestHeader("Authorization", `Bearer ${authToken}`);
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(Math.round((e.loaded / e.total) * 100));
+      }
+    };
+
+    xhr.onload = () => {
+      try {
+        const data = JSON.parse(xhr.responseText);
+        if (xhr.status >= 200 && xhr.status < 300) resolve(data);
+        else reject(new Error(data.error || "Upload failed"));
+      } catch {
+        reject(new Error("Upload failed"));
+      }
+    };
+
+    xhr.onerror = () => reject(new Error("Network error during upload"));
+    xhr.send(formData);
+  });
+}
+
+/**
+ * Start avatar generation for all lesson phrases.
+ */
+export async function startGeneration(sourceVideoId) {
+  return apiFetch("/avatars/generate", {
+    method: "POST",
+    body: JSON.stringify({ sourceVideoId }),
+  });
+}
+
+/**
+ * Poll generation progress.
+ */
+export async function getGenerationStatus() {
+  return apiFetch("/avatars/generation-status");
+}
+
+/**
+ * Get all avatar videos for the current user.
+ */
+export async function getAvatarVideos() {
+  return apiFetch("/avatars/videos");
+}
+
+/**
+ * Get the URL for a specific avatar video or audio.
+ */
+export function getAvatarVideoUrl(phraseId) {
+  return `${API_BASE}/avatars/video/${phraseId}`;
+}
+
+/**
+ * Get the URL for a specific avatar TTS audio.
+ */
+export function getAvatarAudioUrl(phraseId) {
+  return `${API_BASE}/avatars/audio/${phraseId}`;
+}
+
 // ── Health check ──
 export async function healthCheck() {
   return apiFetch("/health");

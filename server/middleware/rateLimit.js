@@ -23,7 +23,7 @@ export const authLimiter = rateLimit({
 });
 
 /**
- * Upload rate limiter — 5 uploads per 15 minutes.
+ * Upload rate limiter — 5 uploads per 15 minutes (images).
  */
 export const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -31,4 +31,37 @@ export const uploadLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: "Too many uploads, please try again later." },
+});
+
+/**
+ * Video upload rate limiter — 3 video uploads per hour.
+ */
+export const videoUploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many video uploads. Please try again later." },
+});
+
+/**
+ * Generation trigger limiter — 2 generation requests per hour.
+ */
+export const generationLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 2,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many generation requests. Please try again later." },
+});
+
+/**
+ * Status polling limiter — 60 requests per minute (frontend polls every 2-3s).
+ */
+export const statusPollLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: "Too many status requests." },
 });

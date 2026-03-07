@@ -3,10 +3,12 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 
 import { globalLimiter } from "./middleware/rateLimit.js";
+import { startPollingLoop } from "./services/avatarPipeline.js";
 
 // Route imports
 import authRoutes from "./routes/auth.js";
@@ -22,6 +24,13 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3001;
 const isProd = process.env.NODE_ENV === "production";
 
+// ── Ensure upload directories exist ──
+const uploadBase = path.resolve(__dirname, process.env.UPLOAD_DIR || "uploads");
+for (const sub of ["", "videos", "frames", "tts-audio", "avatar-videos"]) {
+  const dir = path.join(uploadBase, sub);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+
 const app = express();
 
 // ── Security middleware ──
@@ -35,7 +44,7 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "blob:"],
       connectSrc: ["'self'"],
-      mediaSrc: ["'self'", "blob:"],
+      mediaSrc: ["'self'", "blob:", "data:"],
       objectSrc: ["'none'"],
       frameSrc: ["'none'"],
       baseUri: ["'self'"],
@@ -98,6 +107,9 @@ app.use((err, req, res, next) => {
   console.error("Unhandled error:", err);
   res.status(500).json({ error: "Internal server error" });
 });
+
+// ── Start avatar pipeline polling loop ──
+startPollingLoop();
 
 // ── Start server ──
 app.listen(PORT, "0.0.0.0", () => {
