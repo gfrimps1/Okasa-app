@@ -6,12 +6,14 @@
 
 import ffmpeg from "fluent-ffmpeg";
 import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
+import ffprobeInstaller from "@ffprobe-installer/ffprobe";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 
-// Set ffmpeg binary path from the installed package
+// Set both ffmpeg and ffprobe binary paths from installed packages
 ffmpeg.setFfmpegPath(ffmpegInstaller.path);
+ffmpeg.setFfprobePath(ffprobeInstaller.path);
 
 /**
  * Validate a video file using ffprobe.
