@@ -256,13 +256,13 @@ const ParentAvatar = ({ name = "Parent", size = 160, speaking = false, mood = "n
           <div style={{
             position: "absolute", top: 2, right: 2,
             background: "rgba(255,255,255,0.95)", backdropFilter: FX.glassBlur,
-            padding: "3px 8px", borderRadius: R.pill, ...T.label, fontSize: 9, color: C.bgApp,
+            padding: "3px 8px", borderRadius: R.pill, ...T.label, fontSize: 9, color: C.navy,
             boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
           }}>✨ AI</div>
         )}
       </div>
       {showLabel && uploaded && (
-        <p style={{ ...T.label, fontSize: 11, color: C.textPrimary, margin: 0, textAlign: "center" }}>
+        <p style={{ ...T.label, fontSize: 11, color: "var(--text-primary)", margin: 0, textAlign: "center" }}>
           {name}'s AI Tutor
         </p>
       )}
@@ -344,7 +344,7 @@ const VideoAvatar = ({ phraseId, videoUrl, audioUrl, videoStatus, size = 160, na
         <div style={{
           position: "absolute", top: 2, right: 2,
           background: "rgba(255,255,255,0.95)", backdropFilter: FX.glassBlur,
-          padding: "3px 8px", borderRadius: R.pill, ...T.label, fontSize: 9, color: C.bgApp,
+          padding: "3px 8px", borderRadius: R.pill, ...T.label, fontSize: 9, color: C.navy,
           boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         }}>{hasVideo ? "🎬 AI" : "🔊 AI"}</div>
 
@@ -367,15 +367,15 @@ const VideoAvatar = ({ phraseId, videoUrl, audioUrl, videoStatus, size = 160, na
 const SpeechBubble = ({ text, color = C.white, textColor = C.navy, size = "md", animate = true, dark = false }) => {
   const paddings = { sm: "10px 16px", md: "14px 22px", lg: "18px 28px" };
   const fontSizes = { sm: 14, md: 16, lg: 20 };
-  const bg = dark ? "rgba(255,255,255,0.08)" : color;
-  const tc = dark ? C.textPrimary : textColor;
+  const bg = dark ? "var(--overlay-medium)" : color;
+  const tc = dark ? "var(--text-primary)" : textColor;
   return (
     <div style={{
       position: "relative", background: bg, borderRadius: R.cardSm,
       padding: paddings[size], boxShadow: dark ? "none" : "0 4px 20px rgba(0,0,0,0.06)",
       maxWidth: 340, textAlign: "center", backdropFilter: dark ? FX.glassBlur : "none",
       animation: animate ? "popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)" : "none",
-      border: dark ? FX.cardBorder : "none",
+      border: dark ? "var(--card-border)" : "none",
     }}>
       <div style={{
         position: "absolute", top: -8, left: "50%", transform: "translateX(-50%)",
@@ -447,10 +447,10 @@ const Confetti = ({ active }) => {
 const GlassCard = ({ children, style = {}, onClick, dark = false }) => (
   <div onClick={onClick} style={{
     padding: 20, borderRadius: R.cardMd, position: "relative", overflow: "hidden",
-    background: dark ? C.bgCard : "rgba(255,255,255,0.95)",
-    backdropFilter: FX.glassBlur, border: dark ? FX.cardBorder : "1px solid rgba(255,255,255,0.5)",
+    background: dark ? "var(--bg-card)" : "rgba(255,255,255,0.95)",
+    backdropFilter: FX.glassBlur, border: dark ? "var(--card-border)" : "1px solid rgba(255,255,255,0.5)",
     cursor: onClick ? "pointer" : "default",
-    boxShadow: dark ? FX.cardShadow : "0 8px 32px rgba(0,0,0,0.08)",
+    boxShadow: dark ? "var(--card-shadow)" : "0 8px 32px rgba(0,0,0,0.08)",
     transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)", ...style,
   }}>
     <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
@@ -463,7 +463,7 @@ const BigBtn = ({ children, color = C.sunflower, textColor = C.navy, onClick, di
     border: "none", borderRadius: R.pill, padding: "0 36px", height: 52,
     ...T.pill, fontFamily: "'Inter', sans-serif", cursor: disabled ? "default" : "pointer",
     background: color, color: textColor, width: "100%",
-    boxShadow: FX.pillShadow,
+    boxShadow: "var(--pill-shadow)",
     transition: "all 0.15s ease", opacity: disabled ? 0.5 : 1,
     display: "flex", alignItems: "center", justifyContent: "center", gap: 10, ...style,
   }}>{children}</button>
@@ -474,8 +474,8 @@ const RoundBtn = ({ onClick, icon = "→", color = C.sunflower, size = 56 }) => 
   <button onClick={onClick} style={{
     width: size, height: size, borderRadius: R.pill, border: "none",
     background: `linear-gradient(135deg, ${color}, ${color}DD)`,
-    color: C.textPrimary, fontSize: size * 0.4, fontWeight: 600, cursor: "pointer",
-    boxShadow: FX.pillShadow, display: "flex", alignItems: "center", justifyContent: "center",
+    color: C.white, fontSize: size * 0.4, fontWeight: 600, cursor: "pointer",
+    boxShadow: "var(--pill-shadow)", display: "flex", alignItems: "center", justifyContent: "center",
     fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
   }}>{icon}</button>
 );
@@ -484,10 +484,10 @@ const RoundBtn = ({ onClick, icon = "→", color = C.sunflower, size = 56 }) => 
 const XPBadge = ({ xp, dark = false }) => (
   <div style={{
     display: "inline-flex", alignItems: "center", gap: 6, padding: "0 14px", height: 36, borderRadius: R.pill,
-    background: dark ? "rgba(255,255,255,0.06)" : `linear-gradient(135deg, ${C.sunflower}, ${C.gold})`,
-    border: dark ? FX.glassBorder : "none",
-    boxShadow: dark ? "none" : FX.pillShadow,
-    ...T.label, fontSize: 13, color: dark ? C.accentGold : C.bgApp,
+    background: dark ? "var(--overlay-subtle)" : `linear-gradient(135deg, ${C.sunflower}, ${C.gold})`,
+    border: dark ? "var(--glass-border)" : "none",
+    boxShadow: dark ? "none" : "var(--pill-shadow)",
+    ...T.label, fontSize: 13, color: dark ? "var(--accent-gold)" : C.navy,
   }}>⭐ {xp} XP</div>
 );
 
@@ -499,6 +499,16 @@ export default function OkasaApp() {
   const [setupStep, setSetupStep] = useState(1);
   const [profile, setProfile] = useState({ parentName: "", childName: "", language: "Twi (Ashanti)", videoUploaded: false, avatarReady: false, avatarType: "cartoon" });
   const [isGenerating, setIsGenerating] = useState(false);
+  // ── Theme state ──
+  const [theme, setTheme] = useState(() => localStorage.getItem('okasa_theme') || 'dark');
+  const isDark = theme === 'dark';
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem('okasa_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
   // Avatar video generation state
   const [sourceVideoId, setSourceVideoId] = useState(null);
   const [generationJobId, setGenerationJobId] = useState(null);
@@ -803,12 +813,12 @@ export default function OkasaApp() {
 
   /* ═══ SPLASH ═══ */
   if (screen === "splash") return (
-    <div style={{ ...page, background: C.bgApp, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+    <div style={{ ...page, background: "var(--bg-app)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
       <FloatingOrbs count={15} colors={[C.sunflower, C.coral, C.mint, C.grape, C.sky]} />
       <div style={{ zIndex: 1, animation: "popIn 0.6s cubic-bezier(0.34,1.56,0.64,1)", textAlign: "center" }}>
         <ParentAvatar size={130} speaking={false} uploaded={false} showLabel={false} ring={false} />
-        <h1 style={{ ...T.hero, color: C.textPrimary, margin: "20px 0 0", textShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>Ɔkasa!</h1>
-        <p style={{ ...T.label, color: C.textMuted, letterSpacing: 4, marginTop: 8 }}>LEARN FROM YOUR PARENT</p>
+        <h1 style={{ ...T.hero, color: "var(--text-primary)", margin: "20px 0 0", textShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>Ɔkasa!</h1>
+        <p style={{ ...T.label, color: "var(--text-muted)", letterSpacing: 4, marginTop: 8 }}>LEARN FROM YOUR PARENT</p>
       </div>
       <Styles />
     </div>
@@ -816,29 +826,39 @@ export default function OkasaApp() {
 
   /* ═══ AUTH (Login / Register) ═══ */
   if (screen === "auth") return (
-    <div style={{ ...page, background: C.bgApp, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
+    <div style={{ ...page, background: "var(--bg-app)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
       <FloatingOrbs count={14} colors={[C.sunflower, C.coral, C.sky, C.mint, C.grape]} />
+      <button onClick={toggleTheme} style={{
+        position: "absolute", top: 20, right: 20, zIndex: 10,
+        width: 44, height: 44, borderRadius: R.pill,
+        background: "var(--overlay-subtle)",
+        border: "var(--glass-border)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: 20, cursor: "pointer", backdropFilter: FX.glassBlur,
+      }} title={isDark ? "Light Mode" : "Dark Mode"}>
+        {isDark ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+      </button>
       <div style={{ zIndex: 1, textAlign: "center", maxWidth: 420, width: "100%", animation: "popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)" }}>
         <ParentAvatar size={100} speaking={false} uploaded={false} showLabel={false} ring={false} />
-        <h1 style={{ ...T.headline, color: C.textPrimary, margin: "14px 0 4px" }}>Ɔkasa!</h1>
-        <p style={{ ...T.body, color: C.textSecondary, margin: "0 0 32px" }}>
+        <h1 style={{ ...T.headline, color: "var(--text-primary)", margin: "14px 0 4px" }}>Ɔkasa!</h1>
+        <p style={{ ...T.body, color: "var(--text-secondary)", margin: "0 0 32px" }}>
           {authMode === "register" ? "Create your account to start learning" : "Welcome back, learner!"}
         </p>
 
         <GlassCard dark style={{ padding: "20px 22px", marginBottom: 12 }}>
-          <label style={{ ...T.label, fontSize: 11, color: C.accentGold, display: "block", marginBottom: 6 }}>Email</label>
+          <label style={{ ...T.label, fontSize: 11, color: "var(--accent-gold)", display: "block", marginBottom: 6 }}>Email</label>
           <input
             type="email"
             value={authEmail}
             onChange={e => setAuthEmail(e.target.value)}
             placeholder="you@example.com"
             autoComplete="email"
-            style={{ width: "100%", ...T.body, fontSize: 18, fontWeight: 500, border: "none", outline: "none", color: C.textPrimary, boxSizing: "border-box", background: "transparent" }}
+            style={{ width: "100%", ...T.body, fontSize: 18, fontWeight: 500, border: "none", outline: "none", color: "var(--text-primary)", boxSizing: "border-box", background: "transparent" }}
           />
         </GlassCard>
 
         <GlassCard dark style={{ padding: "20px 22px", marginBottom: 12 }}>
-          <label style={{ ...T.label, fontSize: 11, color: C.accentGold, display: "block", marginBottom: 6 }}>Password</label>
+          <label style={{ ...T.label, fontSize: 11, color: "var(--accent-gold)", display: "block", marginBottom: 6 }}>Password</label>
           <input
             type="password"
             value={authPassword}
@@ -846,7 +866,7 @@ export default function OkasaApp() {
             placeholder={authMode === "register" ? "Min 6 characters" : "Your password"}
             autoComplete={authMode === "register" ? "new-password" : "current-password"}
             onKeyDown={e => { if (e.key === "Enter" && authEmail && authPassword.length >= 6) handleAuth(); }}
-            style={{ width: "100%", ...T.body, fontSize: 18, fontWeight: 500, border: "none", outline: "none", color: C.textPrimary, boxSizing: "border-box", background: "transparent" }}
+            style={{ width: "100%", ...T.body, fontSize: 18, fontWeight: 500, border: "none", outline: "none", color: "var(--text-primary)", boxSizing: "border-box", background: "transparent" }}
           />
         </GlassCard>
 
@@ -859,7 +879,7 @@ export default function OkasaApp() {
         <div style={{ marginTop: 8 }}>
           <BigBtn
             color={C.sunflower}
-            textColor={C.bgApp}
+            textColor={C.navy}
             disabled={!authEmail || authPassword.length < 6 || authLoading}
             onClick={handleAuth}
           >
@@ -868,7 +888,7 @@ export default function OkasaApp() {
         </div>
 
         <button onClick={() => { setAuthMode(m => m === "login" ? "register" : "login"); setAuthError(""); }}
-          style={{ background: "none", border: "none", ...T.body, color: C.textSecondary, fontSize: 14, marginTop: 20, cursor: "pointer" }}>
+          style={{ background: "none", border: "none", ...T.body, color: "var(--text-secondary)", fontSize: 14, marginTop: 20, cursor: "pointer" }}>
           {authMode === "login" ? "Don't have an account? Sign Up" : "Already have an account? Sign In"}
         </button>
       </div>
@@ -878,23 +898,24 @@ export default function OkasaApp() {
 
   /* ═══ WELCOME ═══ */
   if (screen === "welcome") return (
-    <div style={{ ...page, background: C.bgApp, display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 24px" }}>
+    <div style={{ ...page, background: "var(--bg-app)", display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 24px" }}>
       <FloatingOrbs count={14} colors={[C.sunflower, C.coral, C.sky, C.mint, C.grape]} />
+      <button onClick={toggleTheme} style={{ position: "absolute", top: 20, right: 20, zIndex: 10, width: 44, height: 44, borderRadius: R.pill, background: "var(--overlay-subtle)", border: "var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer", backdropFilter: FX.glassBlur, transition: "all 0.3s ease" }} title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>{isDark ? '☀️' : '🌙'}</button>
       <div style={{ zIndex: 1, textAlign: "center", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", maxWidth: 420 }}>
         <div style={{ animation: "popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)", position: "relative" }}>
           <ParentAvatar size={140} speaking={false} uploaded={hasAvatar} name={pName} showLabel={false} mood="celebrate" />
           <div style={{ position: "absolute", bottom: -2, right: -10 }}><BirdBuddy size={44} /></div>
         </div>
-        <h1 style={{ ...T.hero, color: C.textPrimary, margin: "16px 0 0" }}>Ɔkasa!</h1>
-        <p style={{ ...T.body, color: C.textSecondary, margin: "6px 0 0" }}>
+        <h1 style={{ ...T.hero, color: "var(--text-primary)", margin: "16px 0 0" }}>Ɔkasa!</h1>
+        <p style={{ ...T.body, color: "var(--text-secondary)", margin: "6px 0 0" }}>
           {hasAvatar ? `${pName} is ready to teach!` : "Learn your mother tongue"}
         </p>
         <div style={{ marginTop: 48, display: "flex", flexDirection: "column", gap: 14, width: "100%", animation: "slideUp 0.6s ease 0.2s both" }}>
-          <BigBtn color={C.sunflower} textColor={C.bgApp} onClick={() => setScreen(hasAvatar ? "dashboard" : "setup")}>
+          <BigBtn color={C.sunflower} textColor={C.navy} onClick={() => setScreen(hasAvatar ? "dashboard" : "setup")}>
             {hasAvatar ? "Start Learning" : "Get Started"}
           </BigBtn>
           {hasAvatar && (
-            <BigBtn color="transparent" textColor={C.textPrimary} onClick={() => { setSetupStep(1); setScreen("setup"); }} style={{ boxShadow: "none", border: "1.5px solid rgba(255,255,255,0.15)", height: 48 }}>
+            <BigBtn color="transparent" textColor={"var(--text-primary)"} onClick={() => { setSetupStep(1); setScreen("setup"); }} style={{ boxShadow: "none", border: "1.5px solid var(--overlay-strong)", height: 48 }}>
               Parent Settings
             </BigBtn>
           )}
@@ -906,15 +927,15 @@ export default function OkasaApp() {
 
   /* ═══ SETUP ═══ */
   if (screen === "setup") return (
-    <div style={{ ...page, background: C.bgApp, padding: "24px 24px 40px", display: "flex", flexDirection: "column" }}>
+    <div style={{ ...page, background: "var(--bg-app)", padding: "24px 24px 40px", display: "flex", flexDirection: "column" }}>
       <FloatingOrbs count={8} colors={[C.sunflower, C.grape, C.sky]} />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, zIndex: 1 }}>
         <button onClick={() => setupStep > 1 ? setSetupStep(s => s - 1) : setScreen("welcome")}
-          style={{ background: "rgba(255,255,255,0.06)", border: FX.glassBorder, borderRadius: R.pill, width: 48, height: 48, padding: 0, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 18, color: C.textPrimary, backdropFilter: FX.glassBlur, display: "flex", alignItems: "center", justifyContent: "center" }}>←</button>
+          style={{ background: "var(--overlay-subtle)", border: "var(--glass-border)", borderRadius: R.pill, width: 48, height: 48, padding: 0, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 18, color: "var(--text-primary)", backdropFilter: FX.glassBlur, display: "flex", alignItems: "center", justifyContent: "center" }}>←</button>
         <div style={{ display: "flex", gap: 6 }}>
-          {[1,2,3,4].map(i => <div key={i} style={{ width: i === setupStep ? 32 : 10, height: 10, borderRadius: R.pill, background: i <= setupStep ? C.accentGold : "rgba(255,255,255,0.08)", transition: "all 0.4s cubic-bezier(0.34,1.56,0.64,1)" }} />)}
+          {[1,2,3,4].map(i => <div key={i} style={{ width: i === setupStep ? 32 : 10, height: 10, borderRadius: R.pill, background: i <= setupStep ? "var(--accent-gold)" : "var(--overlay-medium)", transition: "all 0.4s cubic-bezier(0.34,1.56,0.64,1)" }} />)}
         </div>
-        <div style={{ width: 48 }} />
+        <button onClick={toggleTheme} style={{ background: "var(--overlay-subtle)", border: "var(--glass-border)", borderRadius: R.pill, width: 48, height: 48, padding: 0, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 20, backdropFilter: FX.glassBlur, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.3s ease" }} title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>{isDark ? '☀️' : '🌙'}</button>
       </div>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", maxWidth: 500, margin: "0 auto", width: "100%", zIndex: 1 }}>
         {/* Step 1 */}
@@ -922,15 +943,15 @@ export default function OkasaApp() {
           <div style={{ width: "100%", animation: "slideUp 0.4s ease" }}>
             <div style={{ textAlign: "center", marginBottom: 28 }}>
               <ParentAvatar size={90} uploaded={false} showLabel={false} ring={false} />
-              <h2 style={{ ...T.subhead, color: C.textPrimary, margin: "12px 0 4px" }}>Create your AI tutor</h2>
-              <p style={{ ...T.body, color: C.textSecondary, fontSize: 14 }}>Your child will learn directly from you!</p>
+              <h2 style={{ ...T.subhead, color: "var(--text-primary)", margin: "12px 0 4px" }}>Create your AI tutor</h2>
+              <p style={{ ...T.body, color: "var(--text-secondary)", fontSize: 14 }}>Your child will learn directly from you!</p>
             </div>
             {[
               { label: "Your Name", key: "parentName", placeholder: "e.g. Ama" },
               { label: "Child's Name", key: "childName", placeholder: "e.g. Kofi" },
             ].map(f => (
               <GlassCard key={f.key} dark style={{ padding: "16px 22px", marginBottom: 12, border: inputErrors[f.key] ? `1px solid ${C.coral}` : undefined }}>
-                <label style={{ ...T.label, fontSize: 11, color: C.accentGold, display: "block", marginBottom: 6 }}>{f.label}</label>
+                <label style={{ ...T.label, fontSize: 11, color: "var(--accent-gold)", display: "block", marginBottom: 6 }}>{f.label}</label>
                 <input
                   value={profile[f.key]}
                   maxLength={30}
@@ -948,7 +969,7 @@ export default function OkasaApp() {
                   placeholder={f.placeholder}
                   autoComplete="off"
                   spellCheck="false"
-                  style={{ width: "100%", ...T.body, fontSize: 18, fontWeight: 500, border: "none", outline: "none", color: C.textPrimary, boxSizing: "border-box", background: "transparent" }}
+                  style={{ width: "100%", ...T.body, fontSize: 18, fontWeight: 500, border: "none", outline: "none", color: "var(--text-primary)", boxSizing: "border-box", background: "transparent" }}
                 />
                 {inputErrors[f.key] && (
                   <p style={{ margin: "6px 0 0", ...T.body, fontSize: 11, color: C.coral, fontWeight: 600 }}>⚠️ {inputErrors[f.key]}</p>
@@ -956,7 +977,7 @@ export default function OkasaApp() {
               </GlassCard>
             ))}
             <GlassCard dark style={{ padding: "16px 22px", marginBottom: 12 }}>
-              <label style={{ ...T.label, fontSize: 11, color: C.accentGold, display: "block", marginBottom: 6 }}>Language</label>
+              <label style={{ ...T.label, fontSize: 11, color: "var(--accent-gold)", display: "block", marginBottom: 6 }}>Language</label>
               <select value={profile.language} onChange={e => {
                   // SECURITY: Only accept whitelisted language values
                   const allowed = ["Twi (Ashanti)","Twi (Akuapem)","Fante","Ga","Ewe","Yoruba","Igbo","Hausa"];
@@ -964,8 +985,8 @@ export default function OkasaApp() {
                     setProfile(p => ({ ...p, language: e.target.value }));
                   }
                 }}
-                style={{ width: "100%", ...T.body, fontSize: 18, fontWeight: 500, border: "none", outline: "none", color: C.textPrimary, background: "transparent", boxSizing: "border-box" }}>
-                {["Twi (Ashanti)","Twi (Akuapem)","Fante","Ga","Ewe","Yoruba","Igbo","Hausa"].map(l => <option key={l} style={{ background: C.bgCard, color: C.textPrimary }}>{l}</option>)}
+                style={{ width: "100%", ...T.body, fontSize: 18, fontWeight: 500, border: "none", outline: "none", color: "var(--text-primary)", background: "transparent", boxSizing: "border-box" }}>
+                {["Twi (Ashanti)","Twi (Akuapem)","Fante","Ga","Ewe","Yoruba","Igbo","Hausa"].map(l => <option key={l} style={{ background: "var(--option-bg)", color: "var(--text-primary)" }}>{l}</option>)}
               </select>
             </GlassCard>
             <div style={{ marginTop: 24 }}>
@@ -977,8 +998,8 @@ export default function OkasaApp() {
         {setupStep === 2 && (
           <div style={{ width: "100%", textAlign: "center", animation: "slideUp 0.4s ease" }}>
             <ParentAvatar size={120} uploaded={false} showLabel={false} ring={false} />
-            <h2 style={{ ...T.subhead, color: C.textPrimary, margin: "16px 0 4px" }}>Record yourself</h2>
-            <p style={{ ...T.body, color: C.textSecondary, fontSize: 14, marginBottom: 28, lineHeight: 1.6 }}>
+            <h2 style={{ ...T.subhead, color: "var(--text-primary)", margin: "16px 0 4px" }}>Record yourself</h2>
+            <p style={{ ...T.body, color: "var(--text-secondary)", fontSize: 14, marginBottom: 28, lineHeight: 1.6 }}>
               Speak naturally for 10-30 seconds — greet {profile.childName}, count, say family names.
             </p>
 
@@ -988,7 +1009,7 @@ export default function OkasaApp() {
                 <video src={videoPreviewUrl} controls playsInline
                   style={{ width: "100%", maxHeight: 280, objectFit: "cover", borderRadius: R.cardMd }} />
                 <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                  <p style={{ ...T.body, fontSize: 13, color: C.textSecondary, margin: 0 }}>
+                  <p style={{ ...T.body, fontSize: 13, color: "var(--text-secondary)", margin: 0 }}>
                     {videoFile?.name} ({(videoFile?.size / (1024 * 1024)).toFixed(1)}MB)
                   </p>
                   <button onClick={() => { setVideoFile(null); setVideoPreviewUrl(null); setUploadProgress(0); }}
@@ -1012,9 +1033,9 @@ export default function OkasaApp() {
                   }}
                   style={{ position: "absolute", inset: 0, opacity: 0, cursor: "pointer" }} />
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 72, height: 72, borderRadius: "50%", background: `linear-gradient(135deg, ${C.accentCoral}, ${C.energy})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, color: C.textPrimary, boxShadow: FX.pillShadow }}>📹</div>
-                  <p style={{ ...T.pill, color: C.textPrimary, margin: 0, fontSize: 16 }}>Tap to Record or Upload</p>
-                  <p style={{ ...T.body, fontSize: 12, color: C.textMuted, margin: 0 }}>MP4, MOV, or WebM up to 50MB</p>
+                  <div style={{ width: 72, height: 72, borderRadius: "50%", background: `linear-gradient(135deg, ${C.accentCoral}, ${C.energy})`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 32, color: C.white, boxShadow: "var(--pill-shadow)" }}>📹</div>
+                  <p style={{ ...T.pill, color: "var(--text-primary)", margin: 0, fontSize: 16 }}>Tap to Record or Upload</p>
+                  <p style={{ ...T.body, fontSize: 12, color: "var(--text-muted)", margin: 0 }}>MP4, MOV, or WebM up to 50MB</p>
                 </div>
               </GlassCard>
             )}
@@ -1022,17 +1043,17 @@ export default function OkasaApp() {
             {/* Upload progress bar */}
             {uploadProgress > 0 && uploadProgress < 100 && (
               <div style={{ marginTop: 16 }}>
-                <div style={{ height: 6, borderRadius: R.pill, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
-                  <div style={{ height: "100%", borderRadius: R.pill, background: C.accentGold, width: `${uploadProgress}%`, transition: "width 0.3s ease" }} />
+                <div style={{ height: 6, borderRadius: R.pill, background: "var(--overlay-subtle)", overflow: "hidden" }}>
+                  <div style={{ height: "100%", borderRadius: R.pill, background: "var(--accent-gold)", width: `${uploadProgress}%`, transition: "width 0.3s ease" }} />
                 </div>
-                <p style={{ ...T.body, fontSize: 12, color: C.textSecondary, marginTop: 8 }}>Uploading... {uploadProgress}%</p>
+                <p style={{ ...T.body, fontSize: 12, color: "var(--text-secondary)", marginTop: 8 }}>Uploading... {uploadProgress}%</p>
               </div>
             )}
 
             {/* Continue button (only when video selected) */}
             {videoPreviewUrl && uploadProgress === 0 && (
               <div style={{ marginTop: 20 }}>
-                <BigBtn color={C.sunflower} textColor={C.bgApp} onClick={async () => {
+                <BigBtn color={C.sunflower} textColor={C.navy} onClick={async () => {
                   try {
                     setUploadProgress(1);
                     const result = await api.uploadVideo(videoFile, setUploadProgress);
@@ -1049,8 +1070,8 @@ export default function OkasaApp() {
             )}
 
             <GlassCard dark style={{ marginTop: 16, padding: 14, textAlign: "left" }}>
-              <p style={{ margin: 0, ...T.body, fontSize: 12, color: C.textSecondary, lineHeight: 1.8 }}>
-                💡 <strong style={{ color: C.accentGold }}>Tips:</strong> Good lighting, face the camera, speak in {profile.language} and English.
+              <p style={{ margin: 0, ...T.body, fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.8 }}>
+                💡 <strong style={{ color: "var(--accent-gold)" }}>Tips:</strong> Good lighting, face the camera, speak in {profile.language} and English.
               </p>
             </GlassCard>
           </div>
@@ -1062,10 +1083,10 @@ export default function OkasaApp() {
               <ParentAvatar size={160} uploaded={!isGenerating} name={pName} showLabel={false}
                 speaking={isGenerating} mood={isGenerating ? "neutral" : "celebrate"} />
             </div>
-            <h2 style={{ ...T.subhead, color: C.textPrimary, marginBottom: 8 }}>
+            <h2 style={{ ...T.subhead, color: "var(--text-primary)", marginBottom: 8 }}>
               {isGenerating ? "Building your AI twin..." : "Video received!"}
             </h2>
-            <p style={{ ...T.body, color: C.textSecondary, fontSize: 14, marginBottom: 16 }}>
+            <p style={{ ...T.body, color: "var(--text-secondary)", fontSize: 14, marginBottom: 16 }}>
               {isGenerating
                 ? `Generating lesson videos (${generationProgress.completed}/${generationProgress.total})...`
                 : `Ready to generate ${pName}'s AI tutor for all lessons.`}
@@ -1075,15 +1096,15 @@ export default function OkasaApp() {
             {isGenerating && (
               <>
                 <div style={{ padding: "0 20px", marginBottom: 16 }}>
-                  <div style={{ height: 8, borderRadius: R.pill, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                  <div style={{ height: 8, borderRadius: R.pill, background: "var(--overlay-subtle)", overflow: "hidden" }}>
                     <div style={{
                       height: "100%", borderRadius: R.pill,
-                      background: `linear-gradient(90deg, ${C.accentGold}, ${C.energy})`,
+                      background: "linear-gradient(90deg, var(--accent-gold), #FF7E5F)",
                       width: `${generationProgress.percent}%`,
                       transition: "width 0.6s ease",
                     }} />
                   </div>
-                  <p style={{ ...T.label, color: C.textMuted, marginTop: 8 }}>
+                  <p style={{ ...T.label, color: "var(--text-muted)", marginTop: 8 }}>
                     {generationProgress.percent}% complete
                   </p>
                 </div>
@@ -1092,14 +1113,14 @@ export default function OkasaApp() {
                     <div key={i} style={{ width: 12, height: 12, borderRadius: "50%", background: C.sunflower, animation: `dotBounce 1.2s ease-in-out ${i * 0.15}s infinite` }} />
                   ))}
                 </div>
-                <p style={{ ...T.body, fontSize: 12, color: C.textMuted }}>
+                <p style={{ ...T.body, fontSize: 12, color: "var(--text-muted)" }}>
                   This may take a few minutes. You can leave this screen open.
                 </p>
               </>
             )}
 
             {!isGenerating && (
-              <BigBtn color={C.sunflower} textColor={C.bgApp} onClick={async () => {
+              <BigBtn color={C.sunflower} textColor={C.navy} onClick={async () => {
                 try {
                   setIsGenerating(true);
                   const result = await api.startGeneration(sourceVideoId);
@@ -1120,8 +1141,8 @@ export default function OkasaApp() {
             <div style={{ marginTop: 12 }}>
               <SpeechBubble text={`Hi ${cName}! I'm going to teach you ${profile.language}! 🇬🇭`} dark size="lg" />
             </div>
-            <h2 style={{ ...T.headline, fontSize: 32, color: C.textPrimary, margin: "20px 0 4px" }}>Tutor Ready!</h2>
-            <p style={{ ...T.body, color: C.textSecondary, fontSize: 15, marginBottom: 32 }}>
+            <h2 style={{ ...T.headline, fontSize: 32, color: "var(--text-primary)", margin: "20px 0 4px" }}>Tutor Ready!</h2>
+            <p style={{ ...T.body, color: "var(--text-secondary)", fontSize: 15, marginBottom: 32 }}>
               {pName}'s AI will teach {cName} across every lesson
             </p>
             <BigBtn color={C.sunflower} onClick={() => {
@@ -1146,12 +1167,13 @@ export default function OkasaApp() {
 
   /* ═══ DASHBOARD (Editorial Mood) ═══ */
   if (screen === "dashboard") return (
-    <div style={{ ...page, background: C.bgApp, paddingBottom: 100 }}>
+    <div style={{ ...page, background: "var(--bg-app)", paddingBottom: 100 }}>
       <FloatingOrbs count={16} colors={[C.sunflower, C.mint, C.sky, C.coral, C.grape]} />
       <div style={{ position: "relative", zIndex: 1 }}>
         {/* Header */}
         <div style={{ padding: "44px 24px 0", display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
-          <button onClick={handleLogout} style={{ width: 48, height: 48, borderRadius: R.pill, background: "rgba(255,255,255,0.06)", backdropFilter: FX.glassBlur, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: C.textSecondary, border: FX.glassBorder, cursor: "pointer", fontFamily: "'Inter', sans-serif" }} title="Sign Out">🚪</button>
+          <button onClick={handleLogout} style={{ width: 48, height: 48, borderRadius: R.pill, background: "var(--overlay-subtle)", backdropFilter: FX.glassBlur, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "var(--text-secondary)", border: "var(--glass-border)", cursor: "pointer", fontFamily: "'Inter', sans-serif" }} title="Sign Out">🚪</button>
+          <button onClick={toggleTheme} style={{ width: 48, height: 48, borderRadius: R.pill, background: "var(--overlay-subtle)", backdropFilter: FX.glassBlur, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, border: "var(--glass-border)", cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.3s ease" }} title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>{isDark ? '\u2600\uFE0F' : '\uD83C\uDF19'}</button>
           <div style={{ flex: 1 }} />
           <XPBadge xp={totalXP} dark />
           <ParentAvatar size={44} uploaded={hasAvatar} name={pName} showLabel={false} ring={false} mood="celebrate" />
@@ -1159,11 +1181,11 @@ export default function OkasaApp() {
 
         {/* Title section */}
         <div style={{ padding: "0 24px", marginBottom: 8 }}>
-          <h1 style={{ ...T.hero, color: C.textPrimary, margin: 0, lineHeight: 0.92 }}>
+          <h1 style={{ ...T.hero, color: "var(--text-primary)", margin: 0, lineHeight: 0.92 }}>
             Mother<br/>Tongue<br/>
-            <span style={{ color: C.accentGold }}>Explorer</span>
+            <span style={{ color: "var(--accent-gold)" }}>Explorer</span>
           </h1>
-          <p style={{ ...T.body, color: C.textSecondary, margin: "12px 0 0" }}>
+          <p style={{ ...T.body, color: "var(--text-secondary)", margin: "12px 0 0" }}>
             Hey {cName}! {pName} has {activeLessons.length - completedCount} lessons waiting
           </p>
         </div>
@@ -1184,10 +1206,10 @@ export default function OkasaApp() {
               }}>
                 <div style={{
                   borderRadius: R.cardMd, padding: "24px 20px 20px", position: "relative", overflow: "hidden",
-                  background: done ? C.bgCard : isNext ? C.bgCardHover : C.bgCard,
-                  border: isNext ? `1.5px solid ${lesson.color}40` : FX.cardBorder,
+                  background: done ? "var(--bg-card)" : isNext ? "var(--bg-card-hover)" : "var(--bg-card)",
+                  border: isNext ? `1.5px solid ${lesson.color}40` : "var(--card-border)",
                   backdropFilter: FX.glassBlur,
-                  boxShadow: FX.cardShadow,
+                  boxShadow: "var(--card-shadow)",
                   transition: "all 0.3s ease",
                 }}>
                   {/* Decorative large number */}
@@ -1206,8 +1228,8 @@ export default function OkasaApp() {
                   }}>
                     {done ? "✅" : lesson.icon}
                   </div>
-                  <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 600, color: C.textPrimary, margin: "0 0 4px" }}>{lesson.title}</h3>
-                  <p style={{ ...T.body, fontSize: 13, color: C.textSecondary, margin: "0 0 16px", lineHeight: 1.4 }}>
+                  <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 600, color: "var(--text-primary)", margin: "0 0 4px" }}>{lesson.title}</h3>
+                  <p style={{ ...T.body, fontSize: 13, color: "var(--text-secondary)", margin: "0 0 16px", lineHeight: 1.4 }}>
                     {lesson.subtitle} · {lesson.phrases.length} words
                   </p>
                   {/* Arrow button */}
@@ -1247,7 +1269,7 @@ export default function OkasaApp() {
             <GlassCard key={s.label} dark style={{ flex: 1, padding: 14, textAlign: "center" }}>
               <span style={{ fontSize: 20 }}>{s.icon}</span>
               <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: 28, fontWeight: 400, color: s.col, margin: "2px 0" }}>{s.val}</p>
-              <p style={{ ...T.label, fontSize: 10, color: C.textMuted, margin: 0 }}>{s.label}</p>
+              <p style={{ ...T.label, fontSize: 10, color: "var(--text-muted)", margin: 0 }}>{s.label}</p>
             </GlassCard>
           ))}
         </div>
@@ -1264,7 +1286,7 @@ export default function OkasaApp() {
                 }}>{e}</div>
               ))}
             </div>
-            <p style={{ ...T.body, fontSize: 12, color: C.textMuted, margin: 0 }}>
+            <p style={{ ...T.body, fontSize: 12, color: "var(--text-muted)", margin: 0 }}>
               {cName} and friends are learning
             </p>
           </div>
@@ -1273,14 +1295,15 @@ export default function OkasaApp() {
       {/* ── Bottom Nav Glass Bar ── */}
       <div style={{
         position: "fixed", bottom: 16, left: 16, right: 16, height: 64,
-        borderRadius: R.bottomNav, background: FX.glassBg, backdropFilter: FX.glassBlur,
-        border: FX.glassBorder, display: "flex", alignItems: "center", justifyContent: "space-around",
+        borderRadius: R.bottomNav, background: "var(--glass-bg)", backdropFilter: FX.glassBlur,
+        border: "var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "space-around",
         zIndex: 20, padding: "0 8px", animation: "fadeInUp 0.4s ease 0.3s both",
       }}>
         {[
           { icon: "🏠", label: "Home", action: () => {}, active: screen === "dashboard" },
           { icon: "📊", label: "Progress", action: () => setScreen("progress"), active: false },
           { icon: "⚙️", label: "Settings", action: () => { setSetupStep(1); setScreen("setup"); }, active: false },
+          { icon: isDark ? "\u2600\uFE0F" : "\uD83C\uDF19", label: isDark ? "Light" : "Dark", action: toggleTheme, active: false },
         ].map((tab) => (
           <button key={tab.label} onClick={tab.action} style={{
             background: "none", border: "none", cursor: "pointer",
@@ -1289,7 +1312,7 @@ export default function OkasaApp() {
             opacity: tab.active ? 1 : 0.5, transition: "opacity 0.2s ease",
           }}>
             <span style={{ fontSize: 22 }}>{tab.icon}</span>
-            <span style={{ ...T.label, fontSize: 10, color: tab.active ? C.accentGold : C.textMuted }}>
+            <span style={{ ...T.label, fontSize: 10, color: tab.active ? "var(--accent-gold)" : "var(--text-muted)" }}>
               {tab.label}
             </span>
           </button>
@@ -1301,22 +1324,22 @@ export default function OkasaApp() {
 
   /* ═══ LESSON (Detail view — Editorial Mood) ═══ */
   if (screen === "lesson" && currentLesson && phrase) return (
-    <div style={{ ...page, background: C.bgApp, display: "flex", flexDirection: "column" }}>
+    <div style={{ ...page, background: "var(--bg-app)", display: "flex", flexDirection: "column" }}>
       <FloatingOrbs count={8} colors={[currentLesson.color, C.grape, C.sky]} />
       {/* Header */}
       <div style={{ padding: "28px 24px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 2 }}>
         <button onClick={() => setScreen("dashboard")} style={{
-          background: "rgba(255,255,255,0.06)", border: FX.glassBorder,
+          background: "var(--overlay-subtle)", border: "var(--glass-border)",
           borderRadius: R.pill, width: 48, height: 48, padding: 0, cursor: "pointer", fontSize: 18,
-          color: C.textPrimary, fontFamily: "'Inter', sans-serif", fontWeight: 600, backdropFilter: FX.glassBlur,
+          color: "var(--text-primary)", fontFamily: "'Inter', sans-serif", fontWeight: 600, backdropFilter: FX.glassBlur,
           display: "flex", alignItems: "center", justifyContent: "center",
         }}>←</button>
-        <p style={{ margin: 0, ...T.label, color: C.textSecondary }}>{phraseIdx + 1} / {currentLesson.phrases.length}</p>
+        <p style={{ margin: 0, ...T.label, color: "var(--text-secondary)" }}>{phraseIdx + 1} / {currentLesson.phrases.length}</p>
         <XPBadge xp={Math.round(score * 10)} dark />
       </div>
       {/* Progress bar */}
       <div style={{ padding: "0 24px 16px", zIndex: 2 }}>
-        <div style={{ height: 4, borderRadius: R.pill, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+        <div style={{ height: 4, borderRadius: R.pill, background: "var(--overlay-subtle)", overflow: "hidden" }}>
           <div style={{
             height: "100%", borderRadius: R.pill,
             background: `linear-gradient(90deg, ${currentLesson.color}, ${currentLesson.color}CC)`,
@@ -1341,7 +1364,7 @@ export default function OkasaApp() {
 
       {/* Content card (dark editorial surface) */}
       <div style={{
-        flex: 1, background: C.bgCard, borderRadius: `${R.cardLg}px ${R.cardLg}px 0 0`,
+        flex: 1, background: "var(--bg-card)", borderRadius: `${R.cardLg}px ${R.cardLg}px 0 0`,
         padding: "40px 24px 28px", display: "flex", flexDirection: "column", alignItems: "center",
         zIndex: 1, boxShadow: "0 -8px 40px rgba(0,0,0,0.3)",
         marginTop: 10, border: "1px solid rgba(255,255,255,0.04)", borderBottom: "none",
@@ -1383,25 +1406,25 @@ export default function OkasaApp() {
         {/* WATCH */}
         {phase === "watch" && (
           <div style={{ textAlign: "center", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", animation: "popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}>
-            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 48, fontWeight: 400, color: C.textPrimary, margin: "0 0 6px", letterSpacing: -2 }}>{phrase.twi}</h2>
+            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 48, fontWeight: 400, color: "var(--text-primary)", margin: "0 0 6px", letterSpacing: -2 }}>{phrase.twi}</h2>
             <p style={{ ...T.body, fontSize: 17, color: currentLesson.color, fontWeight: 600, margin: "0 0 12px" }}>/{phrase.phonetic}/</p>
-            <div style={{ background: "rgba(255,255,255,0.06)", padding: "12px 28px", borderRadius: R.pill }}>
-              <p style={{ ...T.body, fontWeight: 600, color: C.textPrimary, margin: 0, fontSize: 18 }}>{phrase.english}</p>
+            <div style={{ background: "var(--overlay-subtle)", padding: "12px 28px", borderRadius: R.pill }}>
+              <p style={{ ...T.body, fontWeight: 600, color: "var(--text-primary)", margin: 0, fontSize: 18 }}>{phrase.english}</p>
             </div>
-            <p style={{ ...T.body, fontSize: 13, color: C.textMuted, fontStyle: "italic", margin: "14px 0 0" }}>💡 {phrase.context}</p>
+            <p style={{ ...T.body, fontSize: 13, color: "var(--text-muted)", fontStyle: "italic", margin: "14px 0 0" }}>💡 {phrase.context}</p>
           </div>
         )}
 
         {/* REPEAT */}
         {phase === "repeat" && (
           <div style={{ textAlign: "center", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", animation: "popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}>
-            <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: 32, fontWeight: 400, color: C.textPrimary, margin: "0 0 24px" }}>"{phrase.twi}"</p>
+            <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: 32, fontWeight: 400, color: "var(--text-primary)", margin: "0 0 24px" }}>"{phrase.twi}"</p>
             {!listening && !feedback && (
               <button onClick={doListen} style={{
                 width: 90, height: 90, borderRadius: "50%", border: "none",
-                background: `linear-gradient(135deg, ${C.accentCoral}, ${C.energy})`, color: C.textPrimary,
+                background: `linear-gradient(135deg, ${C.accentCoral}, ${C.energy})`, color: C.white,
                 fontSize: 36, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: FX.pillShadow,
+                boxShadow: "var(--pill-shadow)",
                 animation: "gentlePulse 2s ease-in-out infinite",
               }}>🎤</button>
             )}
@@ -1429,12 +1452,12 @@ export default function OkasaApp() {
         {/* QUIZ */}
         {phase === "quiz" && (
           <div style={{ textAlign: "center", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", animation: "popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}>
-            <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: 34, fontWeight: 400, color: C.textPrimary, margin: "0 0 20px" }}>"{phrase.twi}"</p>
+            <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: 34, fontWeight: 400, color: "var(--text-primary)", margin: "0 0 20px" }}>"{phrase.twi}"</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
               {quizOpts.map((opt, i) => {
                 const isCorrect = opt.twi === phrase.twi;
                 const isPicked = picked?.twi === opt.twi;
-                let bg = "rgba(255,255,255,0.06)", border = "rgba(255,255,255,0.08)", shadow = "none";
+                let bg = "var(--overlay-subtle)", border = "var(--overlay-medium)", shadow = "none";
                 if (feedback && isCorrect) { bg = `${C.accentTeal}15`; border = C.accentTeal; shadow = `0 3px 12px ${C.accentTeal}20`; }
                 else if (feedback && isPicked && !isCorrect) { bg = `${C.accentCoral}12`; border = C.accentCoral; shadow = `0 3px 12px ${C.accentCoral}20`; }
                 return (
@@ -1442,7 +1465,7 @@ export default function OkasaApp() {
                     display: "flex", alignItems: "center", gap: 14, padding: "15px 18px",
                     borderRadius: R.cardSm, border: `1.5px solid ${border}`, background: bg,
                     cursor: picked ? "default" : "pointer", fontFamily: "'Inter', sans-serif",
-                    ...T.body, fontSize: 16, fontWeight: 600, color: C.textPrimary, width: "100%",
+                    ...T.body, fontSize: 16, fontWeight: 600, color: "var(--text-primary)", width: "100%",
                     boxShadow: shadow, transition: "all 0.2s ease",
                     opacity: feedback && !isCorrect && !isPicked ? 0.4 : 1,
                   }}>
@@ -1469,13 +1492,13 @@ export default function OkasaApp() {
             }
           }} style={{
             flex: 1, padding: 0, height: 48, borderRadius: R.pill,
-            border: "1.5px solid rgba(255,255,255,0.15)", background: "transparent",
-            ...T.pill, color: C.textPrimary, cursor: "pointer",
+            border: "1.5px solid var(--overlay-strong)", background: "transparent",
+            ...T.pill, color: "var(--text-primary)", cursor: "pointer",
             display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
             boxShadow: "none",
           }}>🔊 Hear {pName}</button>
           {phase === "watch" && (
-            <BigBtn color={currentLesson.color} textColor={C.bgApp} onClick={advance} style={{ flex: 1 }}>
+            <BigBtn color={currentLesson.color} textColor={C.navy} onClick={advance} style={{ flex: 1 }}>
               Next →
             </BigBtn>
           )}
@@ -1487,7 +1510,7 @@ export default function OkasaApp() {
 
   /* ═══ RESULTS ═══ */
   if (screen === "results") return (
-    <div style={{ ...page, background: C.bgApp, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 24px", textAlign: "center" }}>
+    <div style={{ ...page, background: "var(--bg-app)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 24px", textAlign: "center" }}>
       <Confetti active={showConfetti} />
       <FloatingOrbs count={10} colors={[C.sunflower, C.mint, C.grape, C.coral]} />
       <div style={{ zIndex: 2, animation: "popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)", maxWidth: 420, width: "100%" }}>
@@ -1495,8 +1518,8 @@ export default function OkasaApp() {
         <div style={{ marginTop: 10 }}>
           <SpeechBubble text={`I'm so proud of you, ${cName}! Medaase!`} dark size="lg" />
         </div>
-        <h1 style={{ ...T.headline, color: C.textPrimary, margin: "20px 0 0" }}>Lesson Complete!</h1>
-        <p style={{ ...T.body, color: C.textSecondary, margin: "6px 0 0" }}>{currentLesson?.title} — {currentLesson?.subtitle}</p>
+        <h1 style={{ ...T.headline, color: "var(--text-primary)", margin: "20px 0 0" }}>Lesson Complete!</h1>
+        <p style={{ ...T.body, color: "var(--text-secondary)", margin: "6px 0 0" }}>{currentLesson?.title} — {currentLesson?.subtitle}</p>
 
         <GlassCard dark style={{ marginTop: 24, padding: 24 }}>
           <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 16 }}>
@@ -1507,19 +1530,19 @@ export default function OkasaApp() {
           </div>
           <div style={{ display: "flex", justifyContent: "center", gap: 32 }}>
             <div>
-              <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: 32, fontWeight: 400, color: C.accentGold, margin: "0 0 2px" }}>+{Math.round(score * 10)}</p>
-              <p style={{ ...T.label, fontSize: 11, color: C.textMuted, margin: 0 }}>XP</p>
+              <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: 32, fontWeight: 400, color: "var(--accent-gold)", margin: "0 0 2px" }}>+{Math.round(score * 10)}</p>
+              <p style={{ ...T.label, fontSize: 11, color: "var(--text-muted)", margin: 0 }}>XP</p>
             </div>
             <div>
               <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: 32, fontWeight: 400, color: C.accentTeal, margin: "0 0 2px" }}>{currentLesson?.phrases.length}</p>
-              <p style={{ ...T.label, fontSize: 11, color: C.textMuted, margin: 0 }}>Words</p>
+              <p style={{ ...T.label, fontSize: 11, color: "var(--text-muted)", margin: 0 }}>Words</p>
             </div>
           </div>
         </GlassCard>
 
         <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
-          <BigBtn color="transparent" textColor={C.textPrimary} onClick={() => startLesson(currentLesson)} style={{ flex: 1, boxShadow: "none", border: "1.5px solid rgba(255,255,255,0.15)" }}>Again</BigBtn>
-          <BigBtn color={C.sunflower} textColor={C.bgApp} onClick={() => setScreen("dashboard")} style={{ flex: 1 }}>Explore</BigBtn>
+          <BigBtn color="transparent" textColor={"var(--text-primary)"} onClick={() => startLesson(currentLesson)} style={{ flex: 1, boxShadow: "none", border: "1.5px solid var(--overlay-strong)" }}>Again</BigBtn>
+          <BigBtn color={C.sunflower} textColor={C.navy} onClick={() => setScreen("dashboard")} style={{ flex: 1 }}>Explore</BigBtn>
         </div>
       </div>
       <Styles />
@@ -1528,13 +1551,13 @@ export default function OkasaApp() {
 
   /* ═══ PROGRESS ═══ */
   if (screen === "progress") return (
-    <div style={{ ...page, background: C.bgApp, padding: "24px 24px 40px" }}>
+    <div style={{ ...page, background: "var(--bg-app)", padding: "24px 24px 40px" }}>
       <FloatingOrbs count={8} colors={[C.sunflower, C.grape, C.sky]} />
       <div style={{ position: "relative", zIndex: 1 }}>
-        <button onClick={() => setScreen("dashboard")} style={{ background: "rgba(255,255,255,0.06)", border: FX.glassBorder, borderRadius: R.pill, width: 48, height: 48, padding: 0, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 18, marginBottom: 20, color: C.textPrimary, backdropFilter: FX.glassBlur, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>←</button>
+        <button onClick={() => setScreen("dashboard")} style={{ background: "var(--overlay-subtle)", border: "var(--glass-border)", borderRadius: R.pill, width: 48, height: 48, padding: 0, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 18, marginBottom: 20, color: "var(--text-primary)", backdropFilter: FX.glassBlur, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>←</button>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
           <ParentAvatar size={90} uploaded={hasAvatar} name={pName} mood="celebrate" showLabel={true} />
-          <h2 style={{ ...T.subhead, color: C.textPrimary, margin: "12px 0 4px" }}>{cName}'s Progress</h2>
+          <h2 style={{ ...T.subhead, color: "var(--text-primary)", margin: "12px 0 4px" }}>{cName}'s Progress</h2>
           <XPBadge xp={totalXP} dark />
         </div>
         {activeLessons.map((lesson, idx) => {
@@ -1542,12 +1565,12 @@ export default function OkasaApp() {
           return (
             <GlassCard key={lesson.id} dark style={{ marginBottom: 12, padding: 18, animation: `slideUp 0.4s ease ${idx * 0.08}s both` }}>
               <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{ width: 52, height: 52, borderRadius: R.cardSm, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, background: done ? `${lesson.color}15` : "rgba(255,255,255,0.05)", border: `1.5px solid ${done ? lesson.color : "rgba(255,255,255,0.08)"}` }}>
+                <div style={{ width: 52, height: 52, borderRadius: R.cardSm, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, background: done ? `${lesson.color}15` : "var(--overlay-subtle)", border: `1.5px solid ${done ? lesson.color : "var(--overlay-medium)"}` }}>
                   {done ? "✅" : lesson.icon}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontFamily: "'Playfair Display', serif", fontWeight: 600, fontSize: 15, color: C.textPrimary, margin: "0 0 6px" }}>{lesson.title} — {lesson.subtitle}</p>
-                  <div style={{ height: 4, borderRadius: R.pill, background: "rgba(255,255,255,0.06)", overflow: "hidden" }}>
+                  <p style={{ fontFamily: "'Playfair Display', serif", fontWeight: 600, fontSize: 15, color: "var(--text-primary)", margin: "0 0 6px" }}>{lesson.title} — {lesson.subtitle}</p>
+                  <div style={{ height: 4, borderRadius: R.pill, background: "var(--overlay-subtle)", overflow: "hidden" }}>
                     <div style={{ height: "100%", borderRadius: R.pill, background: `linear-gradient(90deg, ${lesson.color}, ${lesson.color}AA)`, width: done ? "100%" : "0%", transition: "width 0.6s ease" }} />
                   </div>
                 </div>
@@ -1571,9 +1594,47 @@ function Styles() {
     <style>{`
       @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
       *, *::before, *::after { box-sizing: border-box; margin: 0; }
-      body { background: #0B0E16; }
+      :root, [data-theme="dark"] {
+        --bg-app: #0B0E16;
+        --bg-card: #121826;
+        --bg-card-hover: #1A2236;
+        --text-primary: #F6F3EE;
+        --text-secondary: #A8AFBF;
+        --text-muted: #5C6478;
+        --accent-gold: #F6C500;
+        --glass-bg: rgba(18,24,38,0.75);
+        --glass-border: 1px solid rgba(255,255,255,0.08);
+        --card-border: 1px solid rgba(255,255,255,0.06);
+        --card-shadow: 0 10px 30px rgba(0,0,0,0.22);
+        --pill-shadow: 0 4px 14px rgba(0,0,0,0.18);
+        --overlay-subtle: rgba(255,255,255,0.06);
+        --overlay-medium: rgba(255,255,255,0.08);
+        --overlay-strong: rgba(255,255,255,0.15);
+        --placeholder-color: rgba(168,175,191,0.4);
+        --option-bg: #121826;
+      }
+      [data-theme="light"] {
+        --bg-app: #F5F1EB;
+        --bg-card: #FFFFFF;
+        --bg-card-hover: #F0ECE6;
+        --text-primary: #1A1D26;
+        --text-secondary: #5C6478;
+        --text-muted: #8B92A0;
+        --accent-gold: #B8860B;
+        --glass-bg: rgba(255,255,255,0.88);
+        --glass-border: 1px solid rgba(0,0,0,0.10);
+        --card-border: 1px solid rgba(0,0,0,0.06);
+        --card-shadow: 0 8px 24px rgba(0,0,0,0.06);
+        --pill-shadow: 0 4px 14px rgba(0,0,0,0.08);
+        --overlay-subtle: rgba(0,0,0,0.04);
+        --overlay-medium: rgba(0,0,0,0.06);
+        --overlay-strong: rgba(0,0,0,0.10);
+        --placeholder-color: rgba(90,100,120,0.5);
+        --option-bg: #FFFFFF;
+      }
+      body { background: var(--bg-app); transition: background 0.3s ease, color 0.2s ease; }
       ::-webkit-scrollbar { display: none; }
-      ::placeholder { color: rgba(168,175,191,0.4); }
+      ::placeholder { color: var(--placeholder-color); }
       @keyframes birdBob { 0%, 100% { transform: translateY(0) rotate(0deg); } 25% { transform: translateY(-5px) rotate(-2deg); } 75% { transform: translateY(-3px) rotate(2deg); } }
       @keyframes popIn { 0% { opacity: 0; transform: scale(0.6); } 70% { transform: scale(1.05); } 100% { opacity: 1; transform: scale(1); } }
       @keyframes slideUp { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: translateY(0); } }
