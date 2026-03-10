@@ -74,42 +74,51 @@ const deepFreeze = (obj) => {
   });
   return obj;
 };
-/* ── Editorial Mood UI Design Tokens ── */
+/* ── Theme Refresh UI Design Tokens ── */
 const C = {
-  // Core palette (remapped to Editorial Mood)
-  sunflower: "#F6C500", tangerine: "#FF7E5F", coral: "#F27D7D",
-  sky: "#6E85FF", mint: "#6AD0AE", grape: "#A78BFA", blush: "#F58AB6",
-  navy: "#121826", deepNavy: "#0B0E16", cream: "#F6F3EE", white: "#F6F3EE",
-  cloud: "#1A2236", bark: "#5C6478", leaf: "#6AD0AE", gold: "#F6C500",
-  deepPurple: "#0B0E16", midPurple: "#121826", brightBlue: "#6E85FF",
-  darkGreen: "#0B0E16", richGreen: "#6AD0AE",
-  // Explicit Editorial tokens
-  bgApp: "#0B0E16", bgCard: "#121826", bgCardHover: "#1A2236",
-  textPrimary: "#F6F3EE", textSecondary: "#A8AFBF", textMuted: "#5C6478",
-  accentGold: "#F6C500", accentCoral: "#F27D7D", accentTeal: "#6AD0AE",
-  // Emotion palette
-  joy: "#F6C500", cheerfulStart: "#F2B24F", cheerfulEnd: "#F58AB6",
-  content: "#6E85FF", focus: "#6AD0AE", calm: "#A78BFA", energy: "#FF7E5F",
+  // Primitive palette (PRD Theme Refresh)
+  ivory: "#FBF8F2", warmCream: "#F5EFE3", charcoal: "#1F2430",
+  sunYellow: "#F5C84C", playfulPurple: "#6558F5", lavender: "#8F7CF6",
+  softGreen: "#9AD94B", coral: "#F27D72", skyBlue: "#78B8FF",
+  // Legacy accent aliases (preserved for components)
+  sunflower: "#F5C84C", tangerine: "#FF7E5F", mint: "#6AD0AE",
+  grape: "#A78BFA", sky: "#6E85FF", blush: "#F58AB6",
+  // Semantic text & surface (static fallbacks)
+  navy: "#1F2430", white: "#FFFFFF", cream: "#FBF8F2",
+  // Lesson colors (unchanged)
+  accentCoral: "#F27D72", accentTeal: "#6AD0AE",
+  gold: "#F5C84C", energy: "#FF7E5F", leaf: "#6AD0AE",
 };
 const T = {
-  hero:     { fontFamily: "'DM Serif Display', serif", fontSize: 56, lineHeight: 0.92, letterSpacing: -1.8 },
-  headline: { fontFamily: "'DM Serif Display', serif", fontSize: 42, lineHeight: 0.95, letterSpacing: -1.5 },
-  subhead:  { fontFamily: "'Playfair Display', serif", fontSize: 24, lineHeight: 1.15, letterSpacing: 0.4 },
+  hero:     { fontFamily: "'Nunito', sans-serif", fontSize: 48, lineHeight: 1.0, letterSpacing: -1.2, fontWeight: 800 },
+  headline: { fontFamily: "'Nunito', sans-serif", fontSize: 36, lineHeight: 1.05, letterSpacing: -0.8, fontWeight: 700 },
+  subhead:  { fontFamily: "'Nunito', sans-serif", fontSize: 22, lineHeight: 1.2, letterSpacing: 0.2, fontWeight: 700 },
   body:     { fontFamily: "'Inter', sans-serif", fontSize: 16, lineHeight: 1.55, fontWeight: 400 },
   label:    { fontFamily: "'Inter', sans-serif", fontSize: 13, fontWeight: 600, letterSpacing: 0.6, textTransform: "uppercase" },
   pill:     { fontFamily: "'Inter', sans-serif", fontSize: 15, fontWeight: 600, letterSpacing: 0.3 },
 };
-const R = { pill: 999, cardSm: 18, cardMd: 22, cardLg: 26, panel: 28, bottomNav: 24 };
+const R = {
+  pill: 999, sm: 12, md: 16, lg: 20, xl: 24, xxl: 32,
+  // Semantic aliases
+  control: 16, card: 20, cardLg: 24, heroCard: 32,
+  panel: 28, bottomNav: 24,
+  // Legacy aliases
+  cardSm: 16, cardMd: 20,
+};
 const FX = {
-  glassBlur: "blur(20px)", cardShadow: "0 10px 30px rgba(0,0,0,0.22)",
-  pillShadow: "0 4px 14px rgba(0,0,0,0.18)", glassBg: "rgba(18,24,38,0.75)",
-  glassBorder: "1px solid rgba(255,255,255,0.08)", cardBorder: "1px solid rgba(255,255,255,0.06)",
+  glassBlur: "blur(16px)",
+  // All shadow/border values now come from CSS custom properties
+  glassBg: "var(--glass-bg)",
+  glassBorder: "var(--glass-border)",
+  cardShadow: "var(--card-shadow)",
+  pillShadow: "var(--pill-shadow)",
+  cardBorder: "var(--card-border)",
 };
 
 const LESSONS = [
   {
-    id: "greetings", title: "Nkyia", subtitle: "Greetings", icon: "👋", color: C.sunflower,
-    difficulty: 1, world: "Village Square", bgGrad: `linear-gradient(135deg, #1A1D26 0%, ${C.bgApp} 100%)`,
+    id: "greetings", title: "Nkyia", subtitle: "Greetings", icon: "👋", color: C.sunYellow,
+    difficulty: 1, world: "Village Square", bgGrad: `linear-gradient(135deg, #1A1D26 0%, ${C.ivory} 100%)`,
     phrases: [
       { twi: "Maakye", phonetic: "maa-chi", english: "Good morning", emoji: "🌅", context: "When the sun wakes up!" },
       { twi: "Maaha", phonetic: "maa-ha", english: "Good afternoon", emoji: "☀️", context: "When the sun is high!" },
@@ -119,7 +128,7 @@ const LESSONS = [
   },
   {
     id: "family", title: "Abusua", subtitle: "Family", icon: "🏠", color: C.coral,
-    difficulty: 1, world: "Home Sweet Home", bgGrad: `linear-gradient(135deg, #1C1520 0%, ${C.bgApp} 100%)`,
+    difficulty: 1, world: "Home Sweet Home", bgGrad: `linear-gradient(135deg, #1C1520 0%, ${C.ivory} 100%)`,
     phrases: [
       { twi: "Maame", phonetic: "maa-meh", english: "Mother", emoji: "👩🏿", context: "The queen of the house!" },
       { twi: "Papa", phonetic: "pah-pah", english: "Father", emoji: "👨🏿", context: "The king of the house!" },
@@ -128,7 +137,7 @@ const LESSONS = [
   },
   {
     id: "numbers", title: "Nkonta", subtitle: "Numbers", icon: "✨", color: C.sky,
-    difficulty: 2, world: "Counting Garden", bgGrad: `linear-gradient(135deg, #151A2A 0%, ${C.bgApp} 100%)`,
+    difficulty: 2, world: "Counting Garden", bgGrad: `linear-gradient(135deg, #151A2A 0%, ${C.ivory} 100%)`,
     phrases: [
       { twi: "Baako", phonetic: "baa-ko", english: "One", emoji: "☝️", context: "Just one finger!" },
       { twi: "Mmienu", phonetic: "mien-u", english: "Two", emoji: "✌️", context: "A pair, like your eyes!" },
@@ -137,7 +146,7 @@ const LESSONS = [
   },
   {
     id: "animals", title: "Mmoa", subtitle: "Animals", icon: "🦁", color: C.mint,
-    difficulty: 2, world: "Safari Trail", bgGrad: `linear-gradient(135deg, #111E1C 0%, ${C.bgApp} 100%)`,
+    difficulty: 2, world: "Safari Trail", bgGrad: `linear-gradient(135deg, #111E1C 0%, ${C.ivory} 100%)`,
     phrases: [
       { twi: "Akoko", phonetic: "ah-ko-ko", english: "Chicken", emoji: "🐔", context: "Cock-a-doodle-doo!" },
       { twi: "Gyata", phonetic: "ja-ta", english: "Lion", emoji: "🦁", context: "The brave king!" },
@@ -146,7 +155,7 @@ const LESSONS = [
   },
   {
     id: "food", title: "Aduane", subtitle: "Food", icon: "🍲", color: C.tangerine,
-    difficulty: 3, world: "Kitchen Kingdom", bgGrad: `linear-gradient(135deg, #1E1812 0%, ${C.bgApp} 100%)`,
+    difficulty: 3, world: "Kitchen Kingdom", bgGrad: `linear-gradient(135deg, #1E1812 0%, ${C.ivory} 100%)`,
     phrases: [
       { twi: "Nsuo", phonetic: "en-suo", english: "Water", emoji: "💧", context: "Splish splash!" },
       { twi: "Ɛkɔm de me", phonetic: "eh-kom-deh-meh", english: "I am hungry", emoji: "😋", context: "Tummy rumbles!" },
@@ -169,7 +178,7 @@ const ParentAvatar = ({ name = "Parent", size = 160, speaking = false, mood = "n
   const mouthHeights = [2, 7, 4, 9];
   const mouthH = mouthHeights[mouthPhase];
   const glowColor = speaking ? "rgba(102,224,163,0.6)" : mood === "celebrate" ? "rgba(255,210,51,0.5)" : "rgba(79,195,247,0.3)";
-  const ringColor = speaking ? C.mint : mood === "celebrate" ? C.sunflower : mood === "encourage" ? C.coral : C.sky;
+  const ringColor = speaking ? C.mint : mood === "celebrate" ? C.sunYellow : mood === "encourage" ? C.coral : C.sky;
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
       <div style={{ position: "relative", width: size, height: size }}>
@@ -256,7 +265,7 @@ const ParentAvatar = ({ name = "Parent", size = 160, speaking = false, mood = "n
           <div style={{
             position: "absolute", top: 2, right: 2,
             background: "rgba(255,255,255,0.95)", backdropFilter: FX.glassBlur,
-            padding: "3px 8px", borderRadius: R.pill, ...T.label, fontSize: 9, color: C.navy,
+            padding: "3px 8px", borderRadius: R.pill, ...T.label, fontSize: 9, color: C.charcoal,
             boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
           }}>✨ AI</div>
         )}
@@ -344,7 +353,7 @@ const VideoAvatar = ({ phraseId, videoUrl, audioUrl, videoStatus, size = 160, na
         <div style={{
           position: "absolute", top: 2, right: 2,
           background: "rgba(255,255,255,0.95)", backdropFilter: FX.glassBlur,
-          padding: "3px 8px", borderRadius: R.pill, ...T.label, fontSize: 9, color: C.navy,
+          padding: "3px 8px", borderRadius: R.pill, ...T.label, fontSize: 9, color: C.charcoal,
           boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         }}>{hasVideo ? "🎬 AI" : "🔊 AI"}</div>
 
@@ -364,10 +373,10 @@ const VideoAvatar = ({ phraseId, videoUrl, audioUrl, videoStatus, size = 160, na
 };
 
 /* ── Speech Bubble ── */
-const SpeechBubble = ({ text, color = C.white, textColor = C.navy, size = "md", animate = true, dark = false }) => {
+const SpeechBubble = ({ text, color = C.white, textColor = C.charcoal, size = "md", animate = true, dark = false }) => {
   const paddings = { sm: "10px 16px", md: "14px 22px", lg: "18px 28px" };
   const fontSizes = { sm: 14, md: 16, lg: 20 };
-  const bg = dark ? "var(--overlay-medium)" : color;
+  const bg = dark ? "var(--bg-card)" : color;
   const tc = dark ? "var(--text-primary)" : textColor;
   return (
     <div style={{
@@ -390,14 +399,14 @@ const SpeechBubble = ({ text, color = C.white, textColor = C.navy, size = "md", 
 /* ── Sankofa Bird ── */
 const BirdBuddy = ({ size = 48 }) => (
   <svg viewBox="0 0 80 80" style={{ width: size, height: size, animation: "birdBob 2.5s ease-in-out infinite" }}>
-    <ellipse cx="38" cy="42" rx="18" ry="20" fill={C.sunflower} />
+    <ellipse cx="38" cy="42" rx="18" ry="20" fill={C.sunYellow} />
     <ellipse cx="38" cy="47" rx="11" ry="11" fill="#FFF3D6" />
-    <circle cx="35" cy="24" r="12" fill={C.sunflower} />
+    <circle cx="35" cy="24" r="12" fill={C.sunYellow} />
     <ellipse cx="30" cy="11" rx="2.5" ry="6" fill={C.coral} transform="rotate(-12 30 11)" />
     <ellipse cx="35" cy="9" rx="2.5" ry="7" fill={C.tangerine} />
     <ellipse cx="40" cy="11" rx="2.5" ry="6" fill={C.coral} transform="rotate(12 40 11)" />
     <circle cx="30" cy="22" r="3.5" fill="white" /><circle cx="40" cy="22" r="3.5" fill="white" />
-    <circle cx="31" cy="22" r="2" fill={C.navy} /><circle cx="41" cy="22" r="2" fill={C.navy} />
+    <circle cx="31" cy="22" r="2" fill={C.charcoal} /><circle cx="41" cy="22" r="2" fill={C.charcoal} />
     <circle cx="31.5" cy="21" r="0.8" fill="white" /><circle cx="41.5" cy="21" r="0.8" fill="white" />
     <path d="M32,27 Q35,30 38,27" fill={C.tangerine} />
     <circle cx="25" cy="25" r="2.5" fill={C.blush} opacity="0.5" />
@@ -430,7 +439,7 @@ const FloatingOrbs = ({ count = 12, colors }) => {
 /* ── Confetti ── */
 const Confetti = ({ active }) => {
   const pcs = useMemo(() => active ? Array.from({ length: 40 }, (_, i) => ({
-    id: i, col: [C.sunflower, C.coral, C.sky, C.mint, C.grape, C.tangerine][i % 6],
+    id: i, col: [C.sunYellow, C.coral, C.sky, C.mint, C.grape, C.tangerine][i % 6],
     x: 40 + (Math.random() - 0.5) * 60, rot: Math.random() * 360,
     del: Math.random() * 0.3, sz: 6 + Math.random() * 8,
     drift: (Math.random() - 0.5) * 200,
@@ -444,21 +453,21 @@ const Confetti = ({ active }) => {
 };
 
 /* ── Glass Card (frosted glass effect) ── */
-const GlassCard = ({ children, style = {}, onClick, dark = false }) => (
+const GlassCard = ({ children, style = {}, onClick, dark }) => (
   <div onClick={onClick} style={{
-    padding: 20, borderRadius: R.cardMd, position: "relative", overflow: "hidden",
-    background: dark ? "var(--bg-card)" : "rgba(255,255,255,0.95)",
-    backdropFilter: FX.glassBlur, border: dark ? "var(--card-border)" : "1px solid rgba(255,255,255,0.5)",
+    padding: 20, borderRadius: R.card, position: "relative", overflow: "hidden",
+    background: "var(--bg-card)",
+    border: "var(--card-border)",
     cursor: onClick ? "pointer" : "default",
-    boxShadow: dark ? "var(--card-shadow)" : "0 8px 32px rgba(0,0,0,0.08)",
-    transition: "all 0.3s cubic-bezier(0.34,1.56,0.64,1)", ...style,
+    boxShadow: "var(--card-shadow)",
+    transition: "all 0.25s ease", ...style,
   }}>
-    <div style={{ position: "relative", zIndex: 1 }}>{children}</div>
+    {children}
   </div>
 );
 
 /* ── Big Button ── */
-const BigBtn = ({ children, color = C.sunflower, textColor = C.navy, onClick, disabled, style = {} }) => (
+const BigBtn = ({ children, color = C.sunYellow, textColor = C.charcoal, onClick, disabled, style = {} }) => (
   <button onClick={onClick} disabled={disabled} style={{
     border: "none", borderRadius: R.pill, padding: "0 36px", height: 52,
     ...T.pill, fontFamily: "'Inter', sans-serif", cursor: disabled ? "default" : "pointer",
@@ -470,24 +479,23 @@ const BigBtn = ({ children, color = C.sunflower, textColor = C.navy, onClick, di
 );
 
 /* ── Round Arrow Button (Space Explorer style) ── */
-const RoundBtn = ({ onClick, icon = "→", color = C.sunflower, size = 56 }) => (
+const RoundBtn = ({ onClick, icon = "→", color = C.sunYellow, size = 56 }) => (
   <button onClick={onClick} style={{
     width: size, height: size, borderRadius: R.pill, border: "none",
-    background: `linear-gradient(135deg, ${color}, ${color}DD)`,
-    color: C.white, fontSize: size * 0.4, fontWeight: 600, cursor: "pointer",
+    background: color,
+    color: C.charcoal, fontSize: size * 0.4, fontWeight: 700, cursor: "pointer",
     boxShadow: "var(--pill-shadow)", display: "flex", alignItems: "center", justifyContent: "center",
     fontFamily: "'Inter', sans-serif", transition: "all 0.2s ease",
   }}>{icon}</button>
 );
 
 /* ── XP Badge ── */
-const XPBadge = ({ xp, dark = false }) => (
+const XPBadge = ({ xp, dark }) => (
   <div style={{
     display: "inline-flex", alignItems: "center", gap: 6, padding: "0 14px", height: 36, borderRadius: R.pill,
-    background: dark ? "var(--overlay-subtle)" : `linear-gradient(135deg, ${C.sunflower}, ${C.gold})`,
-    border: dark ? "var(--glass-border)" : "none",
-    boxShadow: dark ? "none" : "var(--pill-shadow)",
-    ...T.label, fontSize: 13, color: dark ? "var(--accent-gold)" : C.navy,
+    background: `${C.sunYellow}18`,
+    border: `1.5px solid ${C.sunYellow}30`,
+    ...T.label, fontSize: 13, color: "var(--accent-gold)",
   }}>⭐ {xp} XP</div>
 );
 
@@ -500,15 +508,15 @@ export default function OkasaApp() {
   const [profile, setProfile] = useState({ parentName: "", childName: "", language: "Twi (Ashanti)", videoUploaded: false, avatarReady: false, avatarType: "cartoon" });
   const [isGenerating, setIsGenerating] = useState(false);
   // ── Theme state ──
-  const [theme, setTheme] = useState(() => localStorage.getItem('okasa_theme') || 'dark');
-  const isDark = theme === 'dark';
+  const [theme, setTheme] = useState(() => localStorage.getItem('okasa_theme') || 'playfulWarm');
+  const isPlayful = theme === 'playfulWarm';
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem('okasa_theme', theme);
   }, [theme]);
 
-  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
+  const toggleTheme = () => setTheme(t => t === 'playfulWarm' ? 'modernStudy' : 'playfulWarm');
   // Avatar video generation state
   const [sourceVideoId, setSourceVideoId] = useState(null);
   const [generationJobId, setGenerationJobId] = useState(null);
@@ -814,7 +822,7 @@ export default function OkasaApp() {
   /* ═══ SPLASH ═══ */
   if (screen === "splash") return (
     <div style={{ ...page, background: "var(--bg-app)", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-      <FloatingOrbs count={15} colors={[C.sunflower, C.coral, C.mint, C.grape, C.sky]} />
+      <FloatingOrbs count={15} colors={[C.sunYellow, C.coral, C.mint, C.grape, C.sky]} />
       <div style={{ zIndex: 1, animation: "popIn 0.6s cubic-bezier(0.34,1.56,0.64,1)", textAlign: "center" }}>
         <ParentAvatar size={130} speaking={false} uploaded={false} showLabel={false} ring={false} />
         <h1 style={{ ...T.hero, color: "var(--text-primary)", margin: "20px 0 0", textShadow: "0 4px 20px rgba(0,0,0,0.3)" }}>Ɔkasa!</h1>
@@ -827,7 +835,7 @@ export default function OkasaApp() {
   /* ═══ AUTH (Login / Register) ═══ */
   if (screen === "auth") return (
     <div style={{ ...page, background: "var(--bg-app)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
-      <FloatingOrbs count={14} colors={[C.sunflower, C.coral, C.sky, C.mint, C.grape]} />
+      <FloatingOrbs count={14} colors={[C.sunYellow, C.coral, C.sky, C.mint, C.grape]} />
       <button onClick={toggleTheme} style={{
         position: "absolute", top: 20, right: 20, zIndex: 10,
         width: 44, height: 44, borderRadius: R.pill,
@@ -835,8 +843,8 @@ export default function OkasaApp() {
         border: "var(--glass-border)",
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 20, cursor: "pointer", backdropFilter: FX.glassBlur,
-      }} title={isDark ? "Light Mode" : "Dark Mode"}>
-        {isDark ? '\u2600\uFE0F' : '\uD83C\uDF19'}
+      }} title={isPlayful ? "Switch to Modern Study" : "Switch to Playful Warm"}>
+        {isPlayful ? '\uD83D\uDCDA' : '\uD83C\uDFA8'}
       </button>
       <div style={{ zIndex: 1, textAlign: "center", maxWidth: 420, width: "100%", animation: "popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)" }}>
         <ParentAvatar size={100} speaking={false} uploaded={false} showLabel={false} ring={false} />
@@ -878,8 +886,8 @@ export default function OkasaApp() {
 
         <div style={{ marginTop: 8 }}>
           <BigBtn
-            color={C.sunflower}
-            textColor={C.navy}
+            color={C.sunYellow}
+            textColor={C.charcoal}
             disabled={!authEmail || authPassword.length < 6 || authLoading}
             onClick={handleAuth}
           >
@@ -899,8 +907,8 @@ export default function OkasaApp() {
   /* ═══ WELCOME ═══ */
   if (screen === "welcome") return (
     <div style={{ ...page, background: "var(--bg-app)", display: "flex", flexDirection: "column", alignItems: "center", padding: "40px 24px" }}>
-      <FloatingOrbs count={14} colors={[C.sunflower, C.coral, C.sky, C.mint, C.grape]} />
-      <button onClick={toggleTheme} style={{ position: "absolute", top: 20, right: 20, zIndex: 10, width: 44, height: 44, borderRadius: R.pill, background: "var(--overlay-subtle)", border: "var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer", backdropFilter: FX.glassBlur, transition: "all 0.3s ease" }} title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>{isDark ? '☀️' : '🌙'}</button>
+      <FloatingOrbs count={14} colors={[C.sunYellow, C.coral, C.sky, C.mint, C.grape]} />
+      <button onClick={toggleTheme} style={{ position: "absolute", top: 20, right: 20, zIndex: 10, width: 44, height: 44, borderRadius: R.pill, background: "var(--overlay-subtle)", border: "var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, cursor: "pointer", backdropFilter: FX.glassBlur, transition: "all 0.3s ease" }} title={isPlayful ? "Switch to Modern Study" : "Switch to Playful Warm"}>{isPlayful ? '📚' : '🎨'}</button>
       <div style={{ zIndex: 1, textAlign: "center", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", maxWidth: 420 }}>
         <div style={{ animation: "popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)", position: "relative" }}>
           <ParentAvatar size={140} speaking={false} uploaded={hasAvatar} name={pName} showLabel={false} mood="celebrate" />
@@ -911,7 +919,7 @@ export default function OkasaApp() {
           {hasAvatar ? `${pName} is ready to teach!` : "Learn your mother tongue"}
         </p>
         <div style={{ marginTop: 48, display: "flex", flexDirection: "column", gap: 14, width: "100%", animation: "slideUp 0.6s ease 0.2s both" }}>
-          <BigBtn color={C.sunflower} textColor={C.navy} onClick={() => setScreen(hasAvatar ? "dashboard" : "setup")}>
+          <BigBtn color={C.sunYellow} textColor={C.charcoal} onClick={() => setScreen(hasAvatar ? "dashboard" : "setup")}>
             {hasAvatar ? "Start Learning" : "Get Started"}
           </BigBtn>
           {hasAvatar && (
@@ -928,14 +936,14 @@ export default function OkasaApp() {
   /* ═══ SETUP ═══ */
   if (screen === "setup") return (
     <div style={{ ...page, background: "var(--bg-app)", padding: "24px 24px 40px", display: "flex", flexDirection: "column" }}>
-      <FloatingOrbs count={8} colors={[C.sunflower, C.grape, C.sky]} />
+      <FloatingOrbs count={8} colors={[C.sunYellow, C.grape, C.sky]} />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, zIndex: 1 }}>
         <button onClick={() => setupStep > 1 ? setSetupStep(s => s - 1) : setScreen("welcome")}
           style={{ background: "var(--overlay-subtle)", border: "var(--glass-border)", borderRadius: R.pill, width: 48, height: 48, padding: 0, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 18, color: "var(--text-primary)", backdropFilter: FX.glassBlur, display: "flex", alignItems: "center", justifyContent: "center" }}>←</button>
         <div style={{ display: "flex", gap: 6 }}>
           {[1,2,3,4].map(i => <div key={i} style={{ width: i === setupStep ? 32 : 10, height: 10, borderRadius: R.pill, background: i <= setupStep ? "var(--accent-gold)" : "var(--overlay-medium)", transition: "all 0.4s cubic-bezier(0.34,1.56,0.64,1)" }} />)}
         </div>
-        <button onClick={toggleTheme} style={{ background: "var(--overlay-subtle)", border: "var(--glass-border)", borderRadius: R.pill, width: 48, height: 48, padding: 0, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 20, backdropFilter: FX.glassBlur, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.3s ease" }} title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>{isDark ? '☀️' : '🌙'}</button>
+        <button onClick={toggleTheme} style={{ background: "var(--overlay-subtle)", border: "var(--glass-border)", borderRadius: R.pill, width: 48, height: 48, padding: 0, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 20, backdropFilter: FX.glassBlur, display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.3s ease" }} title={isPlayful ? "Switch to Modern Study" : "Switch to Playful Warm"}>{isPlayful ? '📚' : '🎨'}</button>
       </div>
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", maxWidth: 500, margin: "0 auto", width: "100%", zIndex: 1 }}>
         {/* Step 1 */}
@@ -1022,7 +1030,7 @@ export default function OkasaApp() {
 
             {/* Upload area (before file selected) */}
             {!videoPreviewUrl && (
-              <GlassCard dark style={{ border: "2px dashed rgba(255,255,255,0.2)", padding: "44px 24px", cursor: "pointer", position: "relative" }}>
+              <GlassCard dark style={{ border: "2px dashed var(--overlay-strong)", padding: "44px 24px", cursor: "pointer", position: "relative" }}>
                 <input type="file" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm"
                   onChange={(e) => {
                     const file = e.target.files[0];
@@ -1053,7 +1061,7 @@ export default function OkasaApp() {
             {/* Continue button (only when video selected) */}
             {videoPreviewUrl && uploadProgress === 0 && (
               <div style={{ marginTop: 20 }}>
-                <BigBtn color={C.sunflower} textColor={C.navy} onClick={async () => {
+                <BigBtn color={C.sunYellow} textColor={C.charcoal} onClick={async () => {
                   try {
                     setUploadProgress(1);
                     const result = await api.uploadVideo(videoFile, setUploadProgress);
@@ -1110,7 +1118,7 @@ export default function OkasaApp() {
                 </div>
                 <div style={{ display: "flex", gap: 4, justifyContent: "center", marginBottom: 24 }}>
                   {[0,1,2,3,4].map(i => (
-                    <div key={i} style={{ width: 12, height: 12, borderRadius: "50%", background: C.sunflower, animation: `dotBounce 1.2s ease-in-out ${i * 0.15}s infinite` }} />
+                    <div key={i} style={{ width: 12, height: 12, borderRadius: "50%", background: C.sunYellow, animation: `dotBounce 1.2s ease-in-out ${i * 0.15}s infinite` }} />
                   ))}
                 </div>
                 <p style={{ ...T.body, fontSize: 12, color: "var(--text-muted)" }}>
@@ -1120,7 +1128,7 @@ export default function OkasaApp() {
             )}
 
             {!isGenerating && (
-              <BigBtn color={C.sunflower} textColor={C.navy} onClick={async () => {
+              <BigBtn color={C.sunYellow} textColor={C.charcoal} onClick={async () => {
                 try {
                   setIsGenerating(true);
                   const result = await api.startGeneration(sourceVideoId);
@@ -1145,7 +1153,7 @@ export default function OkasaApp() {
             <p style={{ ...T.body, color: "var(--text-secondary)", fontSize: 15, marginBottom: 32 }}>
               {pName}'s AI will teach {cName} across every lesson
             </p>
-            <BigBtn color={C.sunflower} onClick={() => {
+            <BigBtn color={C.sunYellow} onClick={() => {
               // Save profile to API
               if (isAuthenticated) {
                 api.updateProfile({
@@ -1168,12 +1176,12 @@ export default function OkasaApp() {
   /* ═══ DASHBOARD (Editorial Mood) ═══ */
   if (screen === "dashboard") return (
     <div style={{ ...page, background: "var(--bg-app)", paddingBottom: 100 }}>
-      <FloatingOrbs count={16} colors={[C.sunflower, C.mint, C.sky, C.coral, C.grape]} />
+      <FloatingOrbs count={16} colors={[C.sunYellow, C.mint, C.sky, C.coral, C.grape]} />
       <div style={{ position: "relative", zIndex: 1 }}>
         {/* Header */}
         <div style={{ padding: "44px 24px 0", display: "flex", alignItems: "center", gap: 14, marginBottom: 24 }}>
           <button onClick={handleLogout} style={{ width: 48, height: 48, borderRadius: R.pill, background: "var(--overlay-subtle)", backdropFilter: FX.glassBlur, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18, color: "var(--text-secondary)", border: "var(--glass-border)", cursor: "pointer", fontFamily: "'Inter', sans-serif" }} title="Sign Out">🚪</button>
-          <button onClick={toggleTheme} style={{ width: 48, height: 48, borderRadius: R.pill, background: "var(--overlay-subtle)", backdropFilter: FX.glassBlur, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, border: "var(--glass-border)", cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.3s ease" }} title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>{isDark ? '\u2600\uFE0F' : '\uD83C\uDF19'}</button>
+          <button onClick={toggleTheme} style={{ width: 48, height: 48, borderRadius: R.pill, background: "var(--overlay-subtle)", backdropFilter: FX.glassBlur, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, border: "var(--glass-border)", cursor: "pointer", fontFamily: "'Inter', sans-serif", transition: "all 0.3s ease" }} title={isPlayful ? "Switch to Modern Study" : "Switch to Playful Warm"}>{isPlayful ? '📚' : '🎨'}</button>
           <div style={{ flex: 1 }} />
           <XPBadge xp={totalXP} dark />
           <ParentAvatar size={44} uploaded={hasAvatar} name={pName} showLabel={false} ring={false} mood="celebrate" />
@@ -1214,8 +1222,8 @@ export default function OkasaApp() {
                 }}>
                   {/* Decorative large number */}
                   <span style={{
-                    position: "absolute", top: -8, right: 8, fontFamily: "'DM Serif Display', serif", fontSize: 80,
-                    color: "rgba(255,255,255,0.03)", lineHeight: 1, pointerEvents: "none",
+                    position: "absolute", top: -8, right: 8, fontFamily: "'Nunito', sans-serif", fontSize: 80,
+                    color: "var(--overlay-subtle)", lineHeight: 1, pointerEvents: "none",
                   }}>{idx + 1}</span>
                   {/* Floating emoji */}
                   <div style={{
@@ -1228,7 +1236,7 @@ export default function OkasaApp() {
                   }}>
                     {done ? "✅" : lesson.icon}
                   </div>
-                  <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 600, color: "var(--text-primary)", margin: "0 0 4px" }}>{lesson.title}</h3>
+                  <h3 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 20, fontWeight: 600, color: "var(--text-primary)", margin: "0 0 4px" }}>{lesson.title}</h3>
                   <p style={{ ...T.body, fontSize: 13, color: "var(--text-secondary)", margin: "0 0 16px", lineHeight: 1.4 }}>
                     {lesson.subtitle} · {lesson.phrases.length} words
                   </p>
@@ -1268,7 +1276,7 @@ export default function OkasaApp() {
           ].map(s => (
             <GlassCard key={s.label} dark style={{ flex: 1, padding: 14, textAlign: "center" }}>
               <span style={{ fontSize: 20 }}>{s.icon}</span>
-              <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: 28, fontWeight: 400, color: s.col, margin: "2px 0" }}>{s.val}</p>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 28, fontWeight: 400, color: s.col, margin: "2px 0" }}>{s.val}</p>
               <p style={{ ...T.label, fontSize: 10, color: "var(--text-muted)", margin: 0 }}>{s.label}</p>
             </GlassCard>
           ))}
@@ -1280,8 +1288,8 @@ export default function OkasaApp() {
             <div style={{ display: "flex" }}>
               {["🧒🏿","👧🏾","🧒🏽"].map((e, i) => (
                 <div key={i} style={{
-                  width: 30, height: 30, borderRadius: "50%", background: "rgba(255,255,255,0.1)",
-                  border: "2px solid rgba(255,255,255,0.2)", marginLeft: i > 0 ? -8 : 0,
+                  width: 30, height: 30, borderRadius: "50%", background: "var(--overlay-subtle)",
+                  border: "2px solid var(--overlay-medium)", marginLeft: i > 0 ? -8 : 0,
                   display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16,
                 }}>{e}</div>
               ))}
@@ -1303,7 +1311,7 @@ export default function OkasaApp() {
           { icon: "🏠", label: "Home", action: () => {}, active: screen === "dashboard" },
           { icon: "📊", label: "Progress", action: () => setScreen("progress"), active: false },
           { icon: "⚙️", label: "Settings", action: () => { setSetupStep(1); setScreen("setup"); }, active: false },
-          { icon: isDark ? "\u2600\uFE0F" : "\uD83C\uDF19", label: isDark ? "Light" : "Dark", action: toggleTheme, active: false },
+          { icon: isPlayful ? "\uD83D\uDCDA" : "\uD83C\uDFA8", label: isPlayful ? "Study" : "Playful", action: toggleTheme, active: false },
         ].map((tab) => (
           <button key={tab.label} onClick={tab.action} style={{
             background: "none", border: "none", cursor: "pointer",
@@ -1366,8 +1374,8 @@ export default function OkasaApp() {
       <div style={{
         flex: 1, background: "var(--bg-card)", borderRadius: `${R.cardLg}px ${R.cardLg}px 0 0`,
         padding: "40px 24px 28px", display: "flex", flexDirection: "column", alignItems: "center",
-        zIndex: 1, boxShadow: "0 -8px 40px rgba(0,0,0,0.3)",
-        marginTop: 10, border: "1px solid rgba(255,255,255,0.04)", borderBottom: "none",
+        zIndex: 1, boxShadow: "0 -4px 24px rgba(0,0,0,0.06)",
+        marginTop: 10, border: "var(--card-border)", borderBottom: "none",
       }}>
         {/* Avatar + speech */}
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, width: "100%" }}>
@@ -1406,7 +1414,7 @@ export default function OkasaApp() {
         {/* WATCH */}
         {phase === "watch" && (
           <div style={{ textAlign: "center", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", animation: "popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}>
-            <h2 style={{ fontFamily: "'DM Serif Display', serif", fontSize: 48, fontWeight: 400, color: "var(--text-primary)", margin: "0 0 6px", letterSpacing: -2 }}>{phrase.twi}</h2>
+            <h2 style={{ fontFamily: "'Nunito', sans-serif", fontSize: 48, fontWeight: 400, color: "var(--text-primary)", margin: "0 0 6px", letterSpacing: -2 }}>{phrase.twi}</h2>
             <p style={{ ...T.body, fontSize: 17, color: currentLesson.color, fontWeight: 600, margin: "0 0 12px" }}>/{phrase.phonetic}/</p>
             <div style={{ background: "var(--overlay-subtle)", padding: "12px 28px", borderRadius: R.pill }}>
               <p style={{ ...T.body, fontWeight: 600, color: "var(--text-primary)", margin: 0, fontSize: 18 }}>{phrase.english}</p>
@@ -1418,7 +1426,7 @@ export default function OkasaApp() {
         {/* REPEAT */}
         {phase === "repeat" && (
           <div style={{ textAlign: "center", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", animation: "popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}>
-            <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: 32, fontWeight: 400, color: "var(--text-primary)", margin: "0 0 24px" }}>"{phrase.twi}"</p>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 32, fontWeight: 400, color: "var(--text-primary)", margin: "0 0 24px" }}>"{phrase.twi}"</p>
             {!listening && !feedback && (
               <button onClick={doListen} style={{
                 width: 90, height: 90, borderRadius: "50%", border: "none",
@@ -1452,7 +1460,7 @@ export default function OkasaApp() {
         {/* QUIZ */}
         {phase === "quiz" && (
           <div style={{ textAlign: "center", flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", animation: "popIn 0.4s cubic-bezier(0.34,1.56,0.64,1)" }}>
-            <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: 34, fontWeight: 400, color: "var(--text-primary)", margin: "0 0 20px" }}>"{phrase.twi}"</p>
+            <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 34, fontWeight: 400, color: "var(--text-primary)", margin: "0 0 20px" }}>"{phrase.twi}"</p>
             <div style={{ display: "flex", flexDirection: "column", gap: 10, width: "100%" }}>
               {quizOpts.map((opt, i) => {
                 const isCorrect = opt.twi === phrase.twi;
@@ -1498,7 +1506,7 @@ export default function OkasaApp() {
             boxShadow: "none",
           }}>🔊 Hear {pName}</button>
           {phase === "watch" && (
-            <BigBtn color={currentLesson.color} textColor={C.navy} onClick={advance} style={{ flex: 1 }}>
+            <BigBtn color={currentLesson.color} textColor={C.charcoal} onClick={advance} style={{ flex: 1 }}>
               Next →
             </BigBtn>
           )}
@@ -1512,7 +1520,7 @@ export default function OkasaApp() {
   if (screen === "results") return (
     <div style={{ ...page, background: "var(--bg-app)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "32px 24px", textAlign: "center" }}>
       <Confetti active={showConfetti} />
-      <FloatingOrbs count={10} colors={[C.sunflower, C.mint, C.grape, C.coral]} />
+      <FloatingOrbs count={10} colors={[C.sunYellow, C.mint, C.grape, C.coral]} />
       <div style={{ zIndex: 2, animation: "popIn 0.5s cubic-bezier(0.34,1.56,0.64,1)", maxWidth: 420, width: "100%" }}>
         <ParentAvatar size={120} uploaded={hasAvatar} name={pName} mood="celebrate" speaking={false} />
         <div style={{ marginTop: 10 }}>
@@ -1530,11 +1538,11 @@ export default function OkasaApp() {
           </div>
           <div style={{ display: "flex", justifyContent: "center", gap: 32 }}>
             <div>
-              <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: 32, fontWeight: 400, color: "var(--accent-gold)", margin: "0 0 2px" }}>+{Math.round(score * 10)}</p>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 32, fontWeight: 400, color: "var(--accent-gold)", margin: "0 0 2px" }}>+{Math.round(score * 10)}</p>
               <p style={{ ...T.label, fontSize: 11, color: "var(--text-muted)", margin: 0 }}>XP</p>
             </div>
             <div>
-              <p style={{ fontFamily: "'DM Serif Display', serif", fontSize: 32, fontWeight: 400, color: C.accentTeal, margin: "0 0 2px" }}>{currentLesson?.phrases.length}</p>
+              <p style={{ fontFamily: "'Nunito', sans-serif", fontSize: 32, fontWeight: 400, color: C.accentTeal, margin: "0 0 2px" }}>{currentLesson?.phrases.length}</p>
               <p style={{ ...T.label, fontSize: 11, color: "var(--text-muted)", margin: 0 }}>Words</p>
             </div>
           </div>
@@ -1542,7 +1550,7 @@ export default function OkasaApp() {
 
         <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
           <BigBtn color="transparent" textColor={"var(--text-primary)"} onClick={() => startLesson(currentLesson)} style={{ flex: 1, boxShadow: "none", border: "1.5px solid var(--overlay-strong)" }}>Again</BigBtn>
-          <BigBtn color={C.sunflower} textColor={C.navy} onClick={() => setScreen("dashboard")} style={{ flex: 1 }}>Explore</BigBtn>
+          <BigBtn color={C.sunYellow} textColor={C.charcoal} onClick={() => setScreen("dashboard")} style={{ flex: 1 }}>Explore</BigBtn>
         </div>
       </div>
       <Styles />
@@ -1552,7 +1560,7 @@ export default function OkasaApp() {
   /* ═══ PROGRESS ═══ */
   if (screen === "progress") return (
     <div style={{ ...page, background: "var(--bg-app)", padding: "24px 24px 40px" }}>
-      <FloatingOrbs count={8} colors={[C.sunflower, C.grape, C.sky]} />
+      <FloatingOrbs count={8} colors={[C.sunYellow, C.grape, C.sky]} />
       <div style={{ position: "relative", zIndex: 1 }}>
         <button onClick={() => setScreen("dashboard")} style={{ background: "var(--overlay-subtle)", border: "var(--glass-border)", borderRadius: R.pill, width: 48, height: 48, padding: 0, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 18, marginBottom: 20, color: "var(--text-primary)", backdropFilter: FX.glassBlur, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>←</button>
         <div style={{ textAlign: "center", marginBottom: 28 }}>
@@ -1569,7 +1577,7 @@ export default function OkasaApp() {
                   {done ? "✅" : lesson.icon}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontFamily: "'Playfair Display', serif", fontWeight: 600, fontSize: 15, color: "var(--text-primary)", margin: "0 0 6px" }}>{lesson.title} — {lesson.subtitle}</p>
+                  <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 600, fontSize: 15, color: "var(--text-primary)", margin: "0 0 6px" }}>{lesson.title} — {lesson.subtitle}</p>
                   <div style={{ height: 4, borderRadius: R.pill, background: "var(--overlay-subtle)", overflow: "hidden" }}>
                     <div style={{ height: "100%", borderRadius: R.pill, background: `linear-gradient(90deg, ${lesson.color}, ${lesson.color}AA)`, width: done ? "100%" : "0%", transition: "width 0.6s ease" }} />
                   </div>
@@ -1592,45 +1600,55 @@ export default function OkasaApp() {
 function Styles() {
   return (
     <style>{`
-      @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
       *, *::before, *::after { box-sizing: border-box; margin: 0; }
-      :root, [data-theme="dark"] {
-        --bg-app: #0B0E16;
-        --bg-card: #121826;
-        --bg-card-hover: #1A2236;
-        --text-primary: #F6F3EE;
-        --text-secondary: #A8AFBF;
-        --text-muted: #5C6478;
-        --accent-gold: #F6C500;
-        --glass-bg: rgba(18,24,38,0.75);
-        --glass-border: 1px solid rgba(255,255,255,0.08);
-        --card-border: 1px solid rgba(255,255,255,0.06);
-        --card-shadow: 0 10px 30px rgba(0,0,0,0.22);
-        --pill-shadow: 0 4px 14px rgba(0,0,0,0.18);
-        --overlay-subtle: rgba(255,255,255,0.06);
-        --overlay-medium: rgba(255,255,255,0.08);
-        --overlay-strong: rgba(255,255,255,0.15);
-        --placeholder-color: rgba(168,175,191,0.4);
-        --option-bg: #121826;
-      }
-      [data-theme="light"] {
-        --bg-app: #F5F1EB;
+      :root, [data-theme="playfulWarm"] {
+        --bg-app: #FBF8F2;
         --bg-card: #FFFFFF;
-        --bg-card-hover: #F0ECE6;
-        --text-primary: #1A1D26;
-        --text-secondary: #5C6478;
+        --bg-card-hover: #F5EFE3;
+        --text-primary: #1F2430;
+        --text-secondary: #5A6478;
         --text-muted: #8B92A0;
-        --accent-gold: #B8860B;
-        --glass-bg: rgba(255,255,255,0.88);
-        --glass-border: 1px solid rgba(0,0,0,0.10);
-        --card-border: 1px solid rgba(0,0,0,0.06);
-        --card-shadow: 0 8px 24px rgba(0,0,0,0.06);
-        --pill-shadow: 0 4px 14px rgba(0,0,0,0.08);
-        --overlay-subtle: rgba(0,0,0,0.04);
-        --overlay-medium: rgba(0,0,0,0.06);
-        --overlay-strong: rgba(0,0,0,0.10);
-        --placeholder-color: rgba(90,100,120,0.5);
+        --accent-gold: #F5C84C;
+        --accent-purple: #6558F5;
+        --glass-bg: rgba(255,255,255,0.85);
+        --glass-border: 1px solid rgba(31,36,48,0.06);
+        --card-border: 1px solid rgba(31,36,48,0.05);
+        --card-shadow: 0 4px 20px rgba(31,36,48,0.06);
+        --pill-shadow: 0 2px 10px rgba(31,36,48,0.08);
+        --overlay-subtle: rgba(31,36,48,0.03);
+        --overlay-medium: rgba(31,36,48,0.05);
+        --overlay-strong: rgba(31,36,48,0.08);
+        --placeholder-color: rgba(90,100,120,0.4);
         --option-bg: #FFFFFF;
+        --input-bg: #F5EFE3;
+        --progress-track: rgba(31,36,48,0.06);
+        --hero-gradient: linear-gradient(180deg, #FBF8F2 0%, #F5EFE3 100%);
+        --orb-opacity: 0.12;
+      }
+      [data-theme="modernStudy"] {
+        --bg-app: #EFEBF5;
+        --bg-card: #FFFFFF;
+        --bg-card-hover: #F3F0FA;
+        --text-primary: #1F2430;
+        --text-secondary: #5A6478;
+        --text-muted: #8B92A0;
+        --accent-gold: #6558F5;
+        --accent-purple: #6558F5;
+        --glass-bg: rgba(255,255,255,0.90);
+        --glass-border: 1px solid rgba(101,88,245,0.10);
+        --card-border: 1px solid rgba(101,88,245,0.06);
+        --card-shadow: 0 4px 24px rgba(101,88,245,0.08);
+        --pill-shadow: 0 2px 12px rgba(101,88,245,0.10);
+        --overlay-subtle: rgba(101,88,245,0.04);
+        --overlay-medium: rgba(101,88,245,0.06);
+        --overlay-strong: rgba(101,88,245,0.10);
+        --placeholder-color: rgba(90,100,120,0.4);
+        --option-bg: #FFFFFF;
+        --input-bg: #F3F0FA;
+        --progress-track: rgba(101,88,245,0.08);
+        --hero-gradient: linear-gradient(180deg, #EFEBF5 0%, #E5E0F5 100%);
+        --orb-opacity: 0.10;
       }
       body { background: var(--bg-app); transition: background 0.3s ease, color 0.2s ease; }
       ::-webkit-scrollbar { display: none; }
