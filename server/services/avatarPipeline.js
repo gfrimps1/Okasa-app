@@ -109,10 +109,11 @@ async function processNextBatch(jobId) {
   if (isProcessing) return;
   isProcessing = true;
 
+  let hasMorePending = false;
+
   try {
     const job = db.prepare("SELECT * FROM generation_jobs WHERE id = ?").get(jobId);
     if (!job || job.status !== "processing") {
-      isProcessing = false;
       return;
     }
 
@@ -126,21 +127,19 @@ async function processNextBatch(jobId) {
     `).all(job.user_id, MAX_ATTEMPTS, CONCURRENCY);
 
     if (!pending.length) {
-      isProcessing = false;
+      checkJobCompletion(jobId);
       return;
     }
 
     // Get the source frame
     const source = db.prepare("SELECT * FROM avatar_source_videos WHERE id = ?").get(job.source_video_id);
     if (!source || !source.frame_filename) {
-      isProcessing = false;
       return;
     }
 
     const framePath = path.join(UPLOAD_BASE, "frames", source.frame_filename);
     if (!fs.existsSync(framePath)) {
       console.error(`  ❌ Frame file missing: ${framePath}`);
-      isProcessing = false;
       return;
     }
 
@@ -164,7 +163,7 @@ async function processNextBatch(jobId) {
 
         if (!isKlingConfigured()) {
           // If Kling not configured, mark as ready with just TTS (demo mode)
-          console.log(`  ⚠️  Kling not configured — marking phrase ${av.phrase_id} as tts_only`);
+          console.log(`  ✅ TTS generated for phrase ${av.phrase_id} (tts_only mode)`);
           db.prepare(
             "UPDATE avatar_videos SET status = 'tts_only', updated_at = datetime('now') WHERE id = ?"
           ).run(av.id);
@@ -197,12 +196,23 @@ async function processNextBatch(jobId) {
       }
     }
 
+    // Check if there are more pending phrases to process
+    const remaining = db.prepare(
+      "SELECT COUNT(*) as c FROM avatar_videos WHERE user_id = ? AND status = 'pending' AND attempts < ?"
+    ).get(job.user_id, MAX_ATTEMPTS);
+    hasMorePending = remaining.c > 0;
+
     // Check if job is complete (no more pending or kling_processing)
     checkJobCompletion(jobId);
   } catch (err) {
     console.error(`Pipeline batch error: ${err.message}`);
   } finally {
     isProcessing = false;
+
+    // If there are more pending phrases, schedule the next batch immediately
+    if (hasMorePending) {
+      setTimeout(() => processNextBatch(jobId), 100);
+    }
   }
 }
 
@@ -281,23 +291,31 @@ function checkJobCompletion(jobId) {
   const job = db.prepare("SELECT * FROM generation_jobs WHERE id = ?").get(jobId);
   if (!job || job.status !== "processing") return;
 
-  // Count remaining
-  const remaining = db.prepare(
-    "SELECT COUNT(*) as c FROM avatar_videos WHERE user_id = ? AND status IN ('pending', 'generating', 'kling_processing')"
-  ).get(job.user_id);
+  // Count remaining and completed from avatar_videos for accuracy
+  const counts = db.prepare(`
+    SELECT
+      SUM(CASE WHEN status IN ('pending', 'generating', 'kling_processing') THEN 1 ELSE 0 END) as remaining,
+      SUM(CASE WHEN status IN ('ready', 'tts_only') THEN 1 ELSE 0 END) as completed,
+      SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed
+    FROM avatar_videos WHERE user_id = ?
+  `).get(job.user_id);
 
-  if (remaining.c === 0) {
+  const remaining = counts.remaining || 0;
+  const completed = counts.completed || 0;
+  const failed = counts.failed || 0;
+
+  if (remaining === 0) {
     // All done
-    const finalStatus = job.failed_phrases > 0 && job.completed_phrases === 0 ? "failed" : "completed";
+    const finalStatus = failed > 0 && completed === 0 ? "failed" : "completed";
     db.prepare(
-      "UPDATE generation_jobs SET status = ?, completed_at = datetime('now') WHERE id = ?"
-    ).run(finalStatus, jobId);
+      "UPDATE generation_jobs SET status = ?, completed_phrases = ?, failed_phrases = ?, completed_at = datetime('now') WHERE id = ?"
+    ).run(finalStatus, completed, failed, jobId);
 
     // Update profile avatar type
-    const avatarType = job.completed_phrases > 0 ? "ai_video" : "cartoon";
+    const avatarType = completed > 0 ? "ai_video" : "cartoon";
     db.prepare("UPDATE profiles SET avatar_type = ? WHERE user_id = ?").run(avatarType, job.user_id);
 
-    console.log(`\n✅ Generation job ${jobId} ${finalStatus}: ${job.completed_phrases}/${job.total_phrases} succeeded`);
+    console.log(`\n✅ Generation job ${jobId} ${finalStatus}: ${completed}/${job.total_phrases} succeeded`);
   }
 }
 
