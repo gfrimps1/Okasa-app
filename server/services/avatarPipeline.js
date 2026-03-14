@@ -109,8 +109,6 @@ async function processNextBatch(jobId) {
   if (isProcessing) return;
   isProcessing = true;
 
-  let hasMorePending = false;
-
   try {
     const job = db.prepare("SELECT * FROM generation_jobs WHERE id = ?").get(jobId);
     if (!job || job.status !== "processing") {
@@ -127,6 +125,13 @@ async function processNextBatch(jobId) {
     `).all(job.user_id, MAX_ATTEMPTS, CONCURRENCY);
 
     if (!pending.length) {
+      // Also check for stuck 'generating' records (older than 2 minutes = likely crashed)
+      const stuck = db.prepare(
+        "UPDATE avatar_videos SET status = 'pending' WHERE user_id = ? AND status = 'generating' AND updated_at < datetime('now', '-2 minutes')"
+      ).run(job.user_id);
+      if (stuck.changes > 0) {
+        console.log(`  🔧 Reset ${stuck.changes} stuck 'generating' records to 'pending'`);
+      }
       checkJobCompletion(jobId);
       return;
     }
@@ -134,18 +139,25 @@ async function processNextBatch(jobId) {
     // Get the source frame
     const source = db.prepare("SELECT * FROM avatar_source_videos WHERE id = ?").get(job.source_video_id);
     if (!source || !source.frame_filename) {
+      console.error(`  ❌ Source video or frame not found for job ${jobId}`);
+      failRemainingPhrases(job.user_id, jobId, "Source frame not available");
+      checkJobCompletion(jobId);
       return;
     }
 
     const framePath = path.join(UPLOAD_BASE, "frames", source.frame_filename);
     if (!fs.existsSync(framePath)) {
       console.error(`  ❌ Frame file missing: ${framePath}`);
+      failRemainingPhrases(job.user_id, jobId, "Frame file missing from disk");
+      checkJobCompletion(jobId);
       return;
     }
 
     // Get the user's language
     const profile = db.prepare("SELECT language FROM profiles WHERE user_id = ?").get(job.user_id);
     const language = profile?.language || "twi";
+
+    console.log(`  📦 Processing batch: ${pending.length} phrases for job ${jobId}`);
 
     // Process each pending phrase
     for (const av of pending) {
@@ -196,12 +208,6 @@ async function processNextBatch(jobId) {
       }
     }
 
-    // Check if there are more pending phrases to process
-    const remaining = db.prepare(
-      "SELECT COUNT(*) as c FROM avatar_videos WHERE user_id = ? AND status = 'pending' AND attempts < ?"
-    ).get(job.user_id, MAX_ATTEMPTS);
-    hasMorePending = remaining.c > 0;
-
     // Check if job is complete (no more pending or kling_processing)
     checkJobCompletion(jobId);
   } catch (err) {
@@ -209,10 +215,30 @@ async function processNextBatch(jobId) {
   } finally {
     isProcessing = false;
 
-    // If there are more pending phrases, schedule the next batch immediately
-    if (hasMorePending) {
-      setTimeout(() => processNextBatch(jobId), 100);
-    }
+    // Always check for more pending work and schedule next batch
+    try {
+      const job = db.prepare("SELECT * FROM generation_jobs WHERE id = ?").get(jobId);
+      if (job && job.status === "processing") {
+        const remaining = db.prepare(
+          "SELECT COUNT(*) as c FROM avatar_videos WHERE user_id = ? AND status IN ('pending') AND attempts < ?"
+        ).get(job.user_id, MAX_ATTEMPTS);
+        if (remaining.c > 0) {
+          setTimeout(() => processNextBatch(jobId), 100);
+        }
+      }
+    } catch (_) { /* don't let finally-block errors prevent isProcessing reset */ }
+  }
+}
+
+// Helper: fail all remaining pending phrases (e.g., frame file missing)
+function failRemainingPhrases(userId, jobId, errorMsg) {
+  const result = db.prepare(
+    "UPDATE avatar_videos SET status = 'failed', error_message = ?, updated_at = datetime('now') WHERE user_id = ? AND status IN ('pending', 'generating')"
+  ).run(errorMsg, userId);
+  if (result.changes > 0) {
+    db.prepare(
+      "UPDATE generation_jobs SET failed_phrases = failed_phrases + ? WHERE id = ?"
+    ).run(result.changes, jobId);
   }
 }
 
@@ -405,6 +431,13 @@ export function startPollingLoop() {
         "SELECT id FROM generation_jobs WHERE status = 'processing'"
       ).all();
       for (const job of activeJobs) {
+        // Reset stuck 'generating' records before processing
+        const stuck = db.prepare(
+          "UPDATE avatar_videos SET status = 'pending' WHERE user_id = (SELECT user_id FROM generation_jobs WHERE id = ?) AND status = 'generating' AND updated_at < datetime('now', '-2 minutes')"
+        ).run(job.id);
+        if (stuck.changes > 0) {
+          console.log(`  🔧 Poll: Reset ${stuck.changes} stuck records for job ${job.id}`);
+        }
         await processNextBatch(job.id);
       }
     } catch (err) {

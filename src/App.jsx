@@ -605,30 +605,46 @@ export default function OkasaApp() {
   // ── Poll generation status ──
   useEffect(() => {
     if (!generationJobId || generationProgress.status === "completed" || generationProgress.status === "failed") return;
-    const interval = setInterval(async () => {
+    let cancelled = false;
+
+    const handleComplete = async (data) => {
+      setProfile(p => ({ ...p, avatarReady: true, avatarType: "ai_video" }));
+      setIsGenerating(false);
+      const videosData = await api.getAvatarVideos();
+      const videoMap = {};
+      (videosData.videos || []).forEach(v => {
+        videoMap[v.phraseId] = {
+          status: v.status,
+          videoUrl: (v.status === "ready") ? api.getAvatarVideoUrl(v.phraseId) : null,
+          audioUrl: (v.status === "tts_only" || v.audioFilename) ? api.getAvatarAudioUrl(v.phraseId) : null,
+        };
+      });
+      setAvatarVideos(videoMap);
+      setSetupStep(4);
+    };
+
+    const pollOnce = async () => {
       try {
         const data = await api.getGenerationStatus();
+        if (cancelled) return;
         setGenerationProgress({ total: data.total, completed: data.completed, failed: data.failed || 0, percent: data.percent, status: data.status });
-        if (data.status === "completed") {
-          clearInterval(interval);
-          setProfile(p => ({ ...p, avatarReady: true, avatarType: "ai_video" }));
-          setIsGenerating(false);
-          // Fetch all video URLs
-          const videosData = await api.getAvatarVideos();
-          const videoMap = {};
-          (videosData.videos || []).forEach(v => {
-            videoMap[v.phraseId] = {
-              status: v.status,
-              videoUrl: v.status === "ready" ? api.getAvatarVideoUrl(v.phraseId) : null,
-              audioUrl: v.audioFilename ? api.getAvatarAudioUrl(v.phraseId) : null,
-            };
-          });
-          setAvatarVideos(videoMap);
-          setSetupStep(4);
+        if (data.status === "completed" || data.status === "failed") {
+          if (data.status === "completed") await handleComplete(data);
+          else setIsGenerating(false);
+          return true;
         }
       } catch (err) { console.error("Generation poll error:", err); }
+      return false;
+    };
+
+    // Poll immediately, then every 3s
+    pollOnce();
+    const interval = setInterval(async () => {
+      const done = await pollOnce();
+      if (done) clearInterval(interval);
     }, 3000);
-    return () => clearInterval(interval);
+
+    return () => { cancelled = true; clearInterval(interval); };
   }, [generationJobId, generationProgress.status]);
 
   // ── Fetch avatar videos on login (if user has AI avatar) ──
@@ -642,7 +658,7 @@ export default function OkasaApp() {
             videoMap[v.phraseId] = {
               status: v.status,
               videoUrl: (v.status === "ready") ? api.getAvatarVideoUrl(v.phraseId) : null,
-              audioUrl: v.audioFilename ? api.getAvatarAudioUrl(v.phraseId) : null,
+              audioUrl: (v.status === "tts_only" || v.audioFilename) ? api.getAvatarAudioUrl(v.phraseId) : null,
             };
           });
           setAvatarVideos(videoMap);
@@ -1101,7 +1117,7 @@ export default function OkasaApp() {
             </p>
 
             {/* Real progress bar during generation */}
-            {isGenerating && (
+            {isGenerating && generationProgress.status !== "failed" && (
               <>
                 <div style={{ padding: "0 20px", marginBottom: 16 }}>
                   <div style={{ height: 8, borderRadius: R.pill, background: "var(--overlay-subtle)", overflow: "hidden" }}>
@@ -1127,7 +1143,29 @@ export default function OkasaApp() {
               </>
             )}
 
-            {!isGenerating && (
+            {generationProgress.status === "failed" && (
+              <div style={{ padding: "0 20px", marginBottom: 16 }}>
+                <p style={{ ...T.body, fontSize: 14, color: "#FF6B6B", marginBottom: 16 }}>
+                  Generation encountered issues. {generationProgress.completed > 0
+                    ? `${generationProgress.completed} of ${generationProgress.total} lessons were generated.`
+                    : "Please try again."}
+                </p>
+                <BigBtn color={C.sunYellow} textColor={C.charcoal} onClick={async () => {
+                  try {
+                    setIsGenerating(true);
+                    setGenerationProgress({ total: 0, completed: 0, percent: 0, status: "processing" });
+                    const result = await api.startGeneration(sourceVideoId);
+                    setGenerationJobId(result.jobId);
+                    setGenerationProgress({ total: result.totalPhrases, completed: 0, percent: 0, status: "processing" });
+                  } catch (err) {
+                    setIsGenerating(false);
+                    alert(err.message || "Generation failed. Please try again.");
+                  }
+                }}>Retry Generation</BigBtn>
+              </div>
+            )}
+
+            {!isGenerating && generationProgress.status !== "failed" && (
               <BigBtn color={C.sunYellow} textColor={C.charcoal} onClick={async () => {
                 try {
                   setIsGenerating(true);

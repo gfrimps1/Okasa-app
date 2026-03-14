@@ -50,19 +50,27 @@ async function generateGoogleTTS(text, language, outputPath) {
     const encodedText = encodeURIComponent(chunk);
     const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${langCode}&client=tw-ob&q=${encodedText}`;
 
-    const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; OkasaApp/1.0)",
-        Referer: "https://translate.google.com/",
-      },
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
 
-    if (!response.ok) {
-      throw new Error(`Google TTS failed: ${response.status} ${response.statusText}`);
+    try {
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (compatible; OkasaApp/1.0)",
+          Referer: "https://translate.google.com/",
+        },
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Google TTS failed: ${response.status} ${response.statusText}`);
+      }
+
+      const buffer = Buffer.from(await response.arrayBuffer());
+      buffers.push(buffer);
+    } finally {
+      clearTimeout(timeout);
     }
-
-    const buffer = Buffer.from(await response.arrayBuffer());
-    buffers.push(buffer);
   }
 
   const combined = Buffer.concat(buffers);
