@@ -53,13 +53,22 @@ async function klingFetch(endpoint, options = {}) {
   const token = generateKlingToken();
   const url = `${KLING_BASE}${endpoint}`;
 
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
-  });
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 30_000);
+
+  let response;
+  try {
+    response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...options.headers,
+      },
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
 
   const data = await response.json().catch(() => ({}));
 
@@ -85,6 +94,7 @@ export async function submitLipSync(imageUrl, audioUrl) {
   const body = {
     model_name: "lip-sync-1.0",
     input: {
+      mode: "audio2video",
       image_url: imageUrl,
       audio_url: audioUrl,
       audio_type: "file",
