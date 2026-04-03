@@ -48,16 +48,18 @@ async function generateGoogleTTS(text, language, outputPath) {
 
   for (const chunk of chunks) {
     const encodedText = encodeURIComponent(chunk);
-    const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${langCode}&client=tw-ob&q=${encodedText}`;
+    // Use client=gtx which is more reliable from server environments
+    const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=${langCode}&client=gtx&q=${encodedText}&ttsspeed=0.8`;
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10_000);
+    const timeout = setTimeout(() => controller.abort(), 15_000);
 
     try {
       const response = await fetch(url, {
         headers: {
-          "User-Agent": "Mozilla/5.0 (compatible; OkasaApp/1.0)",
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
           Referer: "https://translate.google.com/",
+          Accept: "audio/mpeg, audio/*, */*",
         },
         signal: controller.signal,
       });
@@ -67,6 +69,9 @@ async function generateGoogleTTS(text, language, outputPath) {
       }
 
       const buffer = Buffer.from(await response.arrayBuffer());
+      if (buffer.length < 100) {
+        throw new Error("Google TTS returned empty or too-small audio");
+      }
       buffers.push(buffer);
     } finally {
       clearTimeout(timeout);

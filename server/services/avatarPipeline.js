@@ -12,6 +12,7 @@ import { fileURLToPath } from "url";
 import db from "../db.js";
 import { submitLipSyncFromFiles, pollTaskStatus, downloadVideo, isKlingConfigured } from "./klingApi.js";
 import { generateAudio, ttsFilename } from "./ttsService.js";
+import { trimVideoForLipSync } from "./frameExtractor.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const UPLOAD_BASE = path.resolve(__dirname, "..", process.env.UPLOAD_DIR || "uploads");
@@ -136,21 +137,36 @@ async function processNextBatch(jobId) {
       return;
     }
 
-    // Get the source frame
+    // Get the source video (Kling lip-sync requires a video, not just a frame)
     const source = db.prepare("SELECT * FROM avatar_source_videos WHERE id = ?").get(job.source_video_id);
-    if (!source || !source.frame_filename) {
-      console.error(`  ❌ Source video or frame not found for job ${jobId}`);
-      failRemainingPhrases(job.user_id, jobId, "Source frame not available");
+    if (!source || !source.video_filename) {
+      console.error(`  ❌ Source video not found for job ${jobId}`);
+      failRemainingPhrases(job.user_id, jobId, "Source video not available");
       checkJobCompletion(jobId);
       return;
     }
 
-    const framePath = path.join(UPLOAD_BASE, "frames", source.frame_filename);
-    if (!fs.existsSync(framePath)) {
-      console.error(`  ❌ Frame file missing: ${framePath}`);
-      failRemainingPhrases(job.user_id, jobId, "Frame file missing from disk");
+    const sourceVideoPath = path.join(UPLOAD_BASE, "videos", source.video_filename);
+    if (!fs.existsSync(sourceVideoPath)) {
+      console.error(`  ❌ Source video file missing: ${sourceVideoPath}`);
+      failRemainingPhrases(job.user_id, jobId, "Source video file missing from disk");
       checkJobCompletion(jobId);
       return;
+    }
+
+    // Kling lip-sync requires video 2-10 seconds. Trim if needed.
+    let videoPathForKling = sourceVideoPath;
+    const trimmedPath = path.join(UPLOAD_BASE, "videos", `trimmed_${source.video_filename}`);
+    if (!fs.existsSync(trimmedPath)) {
+      try {
+        videoPathForKling = await trimVideoForLipSync(sourceVideoPath, trimmedPath);
+        console.log(`  ✂️ Trimmed source video for Kling: ${videoPathForKling}`);
+      } catch (trimErr) {
+        console.warn(`  ⚠️ Video trim failed, using original: ${trimErr.message}`);
+        videoPathForKling = sourceVideoPath;
+      }
+    } else {
+      videoPathForKling = trimmedPath;
     }
 
     // Get the user's language
@@ -188,8 +204,8 @@ async function processNextBatch(jobId) {
           continue;
         }
 
-        // Step 2: Submit to Kling lip-sync API
-        const { taskId } = await submitLipSyncFromFiles(framePath, audioPath);
+        // Step 2: Submit to Kling lip-sync API (video + audio)
+        const { taskId } = await submitLipSyncFromFiles(videoPathForKling, audioPath);
 
         // Update with Kling task ID
         db.prepare(

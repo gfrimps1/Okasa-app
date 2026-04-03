@@ -103,6 +103,51 @@ export function extractBestFrame(videoPath, outputDir) {
 }
 
 /**
+ * Trim a video to 2-10 seconds for Kling lip-sync API.
+ * Takes the first 10 seconds (or the whole video if shorter).
+ * Re-encodes to mp4 at 720p for maximum Kling compatibility.
+ * @param {string} inputPath - Source video path
+ * @param {string} outputPath - Trimmed output path
+ * @returns {Promise<string>} - Path to the trimmed video
+ */
+export function trimVideoForLipSync(inputPath, outputPath) {
+  return new Promise((resolve, reject) => {
+    ffmpeg.ffprobe(inputPath, (err, metadata) => {
+      if (err) return reject(new Error(`Probe failed: ${err.message}`));
+
+      const duration = parseFloat(metadata.format?.duration || 0);
+      // Kling needs 2-10s. Take up to 10s, starting from 0.
+      const trimDuration = Math.min(duration, 10);
+
+      if (trimDuration < 2) {
+        return reject(new Error(`Video too short for lip-sync (${trimDuration.toFixed(1)}s, need ≥2s)`));
+      }
+
+      // If video is already ≤10s and is mp4, just use the original
+      if (duration <= 10 && inputPath.endsWith(".mp4")) {
+        return resolve(inputPath);
+      }
+
+      ffmpeg(inputPath)
+        .setStartTime(0)
+        .setDuration(trimDuration)
+        .videoCodec("libx264")
+        .audioCodec("aac")
+        .size("720x?")
+        .outputOptions(["-preset", "fast", "-crf", "23", "-movflags", "+faststart"])
+        .on("end", () => {
+          if (!fs.existsSync(outputPath)) {
+            return reject(new Error("Trim produced no output"));
+          }
+          resolve(outputPath);
+        })
+        .on("error", (err) => reject(new Error(`Trim failed: ${err.message}`)))
+        .save(outputPath);
+    });
+  });
+}
+
+/**
  * Generate a unique filename for uploaded videos.
  * @param {string} originalName
  * @returns {string}
@@ -112,4 +157,4 @@ export function videoFilename(originalName) {
   return `vid_${crypto.randomUUID()}${ext}`;
 }
 
-export default { validateVideo, extractBestFrame, videoFilename };
+export default { validateVideo, extractBestFrame, trimVideoForLipSync, videoFilename };

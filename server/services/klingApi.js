@@ -86,18 +86,19 @@ async function klingFetch(endpoint, options = {}) {
 
 /**
  * Submit a lip-sync job to Kling.
- * @param {string} imageUrl - Public URL or base64 of the source face image
- * @param {string} audioUrl - Public URL or base64 of the audio to lip-sync
+ * Kling lip-sync requires a VIDEO (not an image) and audio.
+ * @param {string} videoUrl - Public URL or base64 of the source video (2-10s, 720p/1080p)
+ * @param {string} audioData - Public URL or base64 of the audio to lip-sync
+ * @param {string} audioType - "file" for base64/upload, "url" for public URL
  * @returns {Promise<{taskId: string}>}
  */
-export async function submitLipSync(imageUrl, audioUrl) {
+export async function submitLipSync(videoUrl, audioData, audioType = "file") {
   const body = {
-    model_name: "lip-sync-1.0",
     input: {
+      video_url: videoUrl,
       mode: "audio2video",
-      image_url: imageUrl,
-      audio_url: audioUrl,
-      audio_type: "file",
+      audio_type: audioType,
+      ...(audioType === "file" ? { audio_file: audioData } : { audio_url: audioData }),
     },
   };
 
@@ -117,21 +118,21 @@ export async function submitLipSync(imageUrl, audioUrl) {
 
 /**
  * Submit lip-sync using local files (converts to base64).
- * @param {string} imagePath - Local path to face image
+ * @param {string} videoPath - Local path to source video (mp4)
  * @param {string} audioPath - Local path to audio file
  * @returns {Promise<{taskId: string}>}
  */
-export async function submitLipSyncFromFiles(imagePath, audioPath) {
-  const imageBuffer = fs.readFileSync(imagePath);
+export async function submitLipSyncFromFiles(videoPath, audioPath) {
+  const videoBuffer = fs.readFileSync(videoPath);
   const audioBuffer = fs.readFileSync(audioPath);
 
-  const imageExt = path.extname(imagePath).slice(1) || "jpeg";
+  const videoExt = path.extname(videoPath).slice(1) || "mp4";
   const audioExt = path.extname(audioPath).slice(1) || "mp3";
 
-  const imageBase64 = `data:image/${imageExt};base64,${imageBuffer.toString("base64")}`;
+  const videoBase64 = `data:video/${videoExt};base64,${videoBuffer.toString("base64")}`;
   const audioBase64 = `data:audio/${audioExt};base64,${audioBuffer.toString("base64")}`;
 
-  return submitLipSync(imageBase64, audioBase64);
+  return submitLipSync(videoBase64, audioBase64, "file");
 }
 
 // ── Poll Task Status ──
