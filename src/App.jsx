@@ -61,6 +61,26 @@ const safeText = (str) => {
 };
 
 /**
+ * Levenshtein distance — measures edit distance between two strings.
+ * Used for fuzzy matching in speech recognition.
+ */
+const levenshtein = (a, b) => {
+  if (!a.length) return b.length;
+  if (!b.length) return a.length;
+  const m = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    let prev = i;
+    for (let j = 1; j <= b.length; j++) {
+      const cur = a[i - 1] === b[j - 1] ? m[j - 1] : Math.min(m[j - 1], prev, m[j]) + 1;
+      m[j - 1] = prev;
+      prev = cur;
+    }
+    m[b.length] = prev;
+  }
+  return m[b.length];
+};
+
+/**
  * Freeze lesson data — prevents runtime mutation of the immutable
  * lesson content (prototype pollution defense).
  */
@@ -503,6 +523,37 @@ const RoundBtn = ({ onClick, icon = "→", color = C.sunYellow, size = 56 }) => 
   }}>{icon}</button>
 );
 
+/* ── Toast Notification ── */
+const Toast = ({ message, type = "info", visible, onDismiss }) => {
+  if (!visible) return null;
+  const colors = {
+    success: { bg: `${C.softGreen}18`, border: `${C.softGreen}40`, icon: "✅", text: C.softGreen },
+    error: { bg: `${C.coral}15`, border: `${C.coral}40`, icon: "⚠️", text: C.coral },
+    info: { bg: `${C.skyBlue}12`, border: `${C.skyBlue}35`, icon: "💡", text: C.skyBlue },
+    warning: { bg: `${C.sunYellow}15`, border: `${C.sunYellow}40`, icon: "⚡", text: C.sunYellow },
+  };
+  const c = colors[type] || colors.info;
+  return (
+    <div style={{
+      position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)",
+      zIndex: 200, maxWidth: 380, width: "90%",
+      padding: "14px 20px", borderRadius: R.control,
+      background: c.bg, border: `1.5px solid ${c.border}`,
+      backdropFilter: FX.glassBlur,
+      display: "flex", alignItems: "center", gap: 12,
+      animation: "slideDown 0.4s cubic-bezier(0.34,1.56,0.64,1)",
+      boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
+    }}>
+      <span style={{ fontSize: 18, flexShrink: 0 }}>{c.icon}</span>
+      <p style={{ ...T.body, fontSize: 13, fontWeight: 600, color: c.text, margin: 0, flex: 1 }}>{message}</p>
+      <button onClick={onDismiss} style={{
+        background: "none", border: "none", color: c.text, fontSize: 16,
+        cursor: "pointer", padding: "4px 8px", opacity: 0.7, fontFamily: "'Inter', sans-serif",
+      }}>✕</button>
+    </div>
+  );
+};
+
 /* ── XP Badge ── */
 const XPBadge = ({ xp, dark }) => (
   <div style={{
@@ -556,8 +607,16 @@ export default function OkasaApp() {
   const [progress, setProgress] = useState({});
   const [parentMood, setParentMood] = useState("neutral");
   const [inputErrors, setInputErrors] = useState({});
+  const [toast, setToast] = useState({ visible: false, message: "", type: "info" });
+  const [quizAnswers, setQuizAnswers] = useState([]); // collect answers per lesson
+  const [settingsTab, setSettingsTab] = useState("profile"); // profile | avatar | about
   const carouselRef = useRef(null);
   const synthRef = useRef(window.speechSynthesis);
+
+  const showToast = useCallback((message, type = "info", duration = 3500) => {
+    setToast({ visible: true, message, type });
+    setTimeout(() => setToast(t => ({ ...t, visible: false })), duration);
+  }, []);
 
   // ── Auth & API state ──
   const [authMode, setAuthMode] = useState("login"); // "login" or "register"
@@ -779,7 +838,7 @@ export default function OkasaApp() {
   const startLesson = (lesson) => {
     setCurrentLesson(lesson); setPhraseIdx(0); setPhase("watch");
     setScore(0); setPicked(null); setFeedback(false);
-    setParentMood("neutral"); setScreen("lesson");
+    setParentMood("neutral"); setQuizAnswers([]); setScreen("lesson");
   };
 
   const makeQuiz = useCallback((lesson, idx) => {
@@ -802,11 +861,16 @@ export default function OkasaApp() {
         setShowConfetti(true); setParentMood("celebrate");
         setTimeout(() => setShowConfetti(false), 2500);
         setScreen("results");
-        // Persist progress to API
+        // Persist progress and quiz answers to API
         if (isAuthenticated) {
           api.saveProgress(currentLesson.id, lessonScore)
             .then((data) => { if (data.totalXp) setTotalXP(data.totalXp); })
             .catch(() => { /* progress saved locally at minimum */ });
+          // Submit quiz answers if any were collected
+          if (quizAnswers.length > 0) {
+            api.submitQuiz(currentLesson.id, quizAnswers)
+              .catch(() => { /* quiz data saved locally at minimum */ });
+          }
         }
       }
     }
@@ -824,6 +888,11 @@ export default function OkasaApp() {
       if (correct) { setScore(s => s + 1); setParentMood("celebrate"); }
       else setParentMood("encourage");
       setFeedback(true);
+      // Collect answer for server submission
+      setQuizAnswers(prev => [...prev, {
+        phrase_id: currentLesson.phrases[phraseIdx].id || phraseIdx + 1,
+        selected_answer: opt.english,
+      }]);
       setTimeout(advance, 1400);
     });
   }, [picked, currentLesson, phraseIdx, advance, quizLimiter, quizOpts]);
@@ -832,13 +901,72 @@ export default function OkasaApp() {
     // SECURITY: Rate limit microphone presses to prevent score inflation
     listenLimiter(() => {
       setListening(true); setParentMood("neutral");
-      setTimeout(() => {
-        setListening(false); setScore(s => s + 0.5);
-        setFeedback(true); setParentMood("celebrate");
-        setTimeout(advance, 1200);
-      }, 2200);
+
+      // Try Web Speech API for real speech recognition
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (SpeechRecognition && phrase) {
+        const recognition = new SpeechRecognition();
+        recognition.lang = "ak"; // Akan/Twi language code
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 3;
+        recognition.continuous = false;
+
+        let handled = false;
+        const finish = (earnedScore, feedbackText) => {
+          if (handled) return;
+          handled = true;
+          recognition.stop();
+          setListening(false);
+          setScore(s => s + earnedScore);
+          setFeedback(true);
+          setParentMood(earnedScore >= 0.5 ? "celebrate" : "encourage");
+          if (feedbackText) showToast(feedbackText, earnedScore >= 0.5 ? "success" : "info");
+          setTimeout(advance, 1200);
+        };
+
+        recognition.onresult = (event) => {
+          const results = Array.from(event.results[0]);
+          const transcripts = results.map(r => r.transcript.toLowerCase().trim());
+          const target = phrase.twi.toLowerCase().trim();
+          // Check if any alternative matches or is close
+          const exactMatch = transcripts.some(t => t === target);
+          const closeMatch = transcripts.some(t =>
+            target.includes(t) || t.includes(target) ||
+            (t.length > 2 && target.length > 2 && levenshtein(t, target) <= Math.max(2, Math.floor(target.length * 0.4)))
+          );
+          if (exactMatch) finish(1, "Perfect pronunciation!");
+          else if (closeMatch) finish(0.5, "Good try! Keep practicing!");
+          else finish(0.25, "Nice attempt! Listen again.");
+        };
+
+        recognition.onerror = () => {
+          // Fallback: award partial credit if mic permission denied or error
+          finish(0.5, null);
+        };
+
+        recognition.onspeechend = () => {
+          // If no result after speech ends, give partial credit
+          setTimeout(() => finish(0.5, null), 500);
+        };
+
+        // Safety timeout — if nothing happens after 5s, finish
+        setTimeout(() => finish(0.5, null), 5000);
+
+        try {
+          recognition.start();
+        } catch {
+          finish(0.5, null);
+        }
+      } else {
+        // No Web Speech API — graceful fallback with timer
+        setTimeout(() => {
+          setListening(false); setScore(s => s + 0.5);
+          setFeedback(true); setParentMood("celebrate");
+          setTimeout(advance, 1200);
+        }, 2200);
+      }
     });
-  }, [advance, listenLimiter]);
+  }, [advance, listenLimiter, phrase, showToast]);
 
   const phrase = currentLesson?.phrases[phraseIdx];
   const isLessonDone = (lessonId) => {
@@ -983,6 +1111,7 @@ export default function OkasaApp() {
   /* ═══ SETUP ═══ */
   if (screen === "setup") return (
     <div className="mesh-bg" style={{ ...page, background: "var(--bg-app)", padding: "24px 24px 40px", display: "flex", flexDirection: "column" }}>
+      <Toast {...toast} onDismiss={() => setToast(t => ({ ...t, visible: false }))} />
       <FloatingOrbs count={8} colors={[C.sunYellow, C.grape, C.sky]} />
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, zIndex: 1 }}>
         <button onClick={() => setupStep > 1 ? setSetupStep(s => s - 1) : setScreen("welcome")}
@@ -1084,7 +1213,7 @@ export default function OkasaApp() {
                   onChange={(e) => {
                     const file = e.target.files[0];
                     if (!file) return;
-                    if (file.size > 50 * 1024 * 1024) { alert("Video must be under 50MB"); return; }
+                    if (file.size > 50 * 1024 * 1024) { showToast("Video must be under 50MB", "warning"); return; }
                     setVideoFile(file);
                     setVideoPreviewUrl(URL.createObjectURL(file));
                   }}
@@ -1119,7 +1248,7 @@ export default function OkasaApp() {
                     setUploadProgress(100);
                     setTimeout(() => { setUploadProgress(0); setSetupStep(3); }, 500);
                   } catch (err) {
-                    alert(err.message || "Upload failed. Please try again.");
+                    showToast(err.message || "Upload failed. Please try again.", "error");
                     setUploadProgress(0);
                   }
                 }}>Upload & Continue →</BigBtn>
@@ -1192,7 +1321,7 @@ export default function OkasaApp() {
                     setGenerationProgress({ total: result.totalPhrases, completed: 0, percent: 0, status: "processing" });
                   } catch (err) {
                     setIsGenerating(false);
-                    alert(err.message || "Generation failed. Please try again.");
+                    showToast(err.message || "Generation failed. Please try again.", "error");
                   }
                 }}>Retry Generation</BigBtn>
               </div>
@@ -1247,6 +1376,7 @@ export default function OkasaApp() {
   /* ═══ DASHBOARD (Editorial Mood) ═══ */
   if (screen === "dashboard") return (
     <div className="mesh-bg" style={{ ...page, background: "var(--bg-app)", paddingBottom: 100 }}>
+      <Toast {...toast} onDismiss={() => setToast(t => ({ ...t, visible: false }))} />
       <FloatingOrbs count={16} colors={[C.sunYellow, C.mint, C.sky, C.coral, C.grape]} />
       <div style={{ position: "relative", zIndex: 1 }}>
         {/* Header */}
@@ -1388,7 +1518,7 @@ export default function OkasaApp() {
         {[
           { icon: "🏠", label: "Home", action: () => {}, active: screen === "dashboard" },
           { icon: "📊", label: "Progress", action: () => setScreen("progress"), active: false },
-          { icon: "⚙️", label: "Settings", action: () => { setSetupStep(1); setScreen("setup"); }, active: false },
+          { icon: "⚙️", label: "Settings", action: () => { setSettingsTab("profile"); setScreen("settings"); }, active: false },
           { icon: isPlayful ? "\uD83D\uDCDA" : "\uD83C\uDFA8", label: isPlayful ? "Study" : "Playful", action: toggleTheme, active: false },
         ].map((tab) => (
           <button key={tab.label} onClick={tab.action} style={{
@@ -1416,6 +1546,7 @@ export default function OkasaApp() {
   /* ═══ LESSON (Detail view — Editorial Mood) ═══ */
   if (screen === "lesson" && currentLesson && phrase) return (
     <div className="mesh-bg" style={{ ...page, background: "var(--bg-app)", display: "flex", flexDirection: "column" }}>
+      <Toast {...toast} onDismiss={() => setToast(t => ({ ...t, visible: false }))} />
       <FloatingOrbs count={8} colors={[currentLesson.color, C.grape, C.sky]} />
       {/* Header */}
       <div style={{ padding: "28px 24px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 2 }}>
@@ -1654,38 +1785,366 @@ export default function OkasaApp() {
     </div>
   );
 
-  /* ═══ PROGRESS ═══ */
-  if (screen === "progress") return (
-    <div className="mesh-bg" style={{ ...page, background: "var(--bg-app)", padding: "24px 24px 40px" }}>
-      <FloatingOrbs count={8} colors={[C.sunYellow, C.grape, C.sky]} />
-      <div style={{ position: "relative", zIndex: 1 }}>
-        <button onClick={() => setScreen("dashboard")} style={{ background: "var(--overlay-subtle)", border: "var(--glass-border)", borderRadius: R.pill, width: 48, height: 48, padding: 0, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 18, marginBottom: 20, color: "var(--text-primary)", backdropFilter: FX.glassBlur, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>←</button>
-        <div style={{ textAlign: "center", marginBottom: 28 }}>
-          <ParentAvatar size={90} uploaded={hasAvatar} name={pName} mood="celebrate" showLabel={true} />
-          <h2 style={{ fontFamily: "'Space Grotesk', 'Nunito', sans-serif", fontSize: 26, fontWeight: 700, letterSpacing: -0.8, color: "var(--text-primary)", margin: "12px 0 6px" }}>{cName}'s Progress</h2>
-          <XPBadge xp={totalXP} dark />
-        </div>
-        {activeLessons.map((lesson, idx) => {
-          const done = isLessonDone(lesson.id);
-          return (
-            <GlassCard key={lesson.id} dark onClick={() => startLesson(lesson)} style={{ marginBottom: 14, padding: "18px 20px", animation: `slideUp 0.4s ease ${idx * 0.08}s both`, borderLeft: `3px solid ${done ? C.softGreen : lesson.color}40`, borderRadius: `4px ${R.card}px ${R.card}px 4px` }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-                <div style={{ width: 52, height: 52, borderRadius: R.control, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, background: done ? `${C.softGreen}10` : `${lesson.color}08`, border: `1.5px solid ${done ? `${C.softGreen}30` : `${lesson.color}18`}`, transition: "all 0.3s ease" }}>
-                  {done ? "✅" : lesson.icon}
-                </div>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)", margin: "0 0 8px" }}>{lesson.title} — {lesson.subtitle}</p>
-                  <div style={{ height: 5, borderRadius: R.pill, background: "var(--overlay-subtle)", overflow: "hidden" }}>
-                    <div style={{ height: "100%", borderRadius: R.pill, background: done ? `linear-gradient(90deg, ${C.softGreen}, ${C.mint})` : `linear-gradient(90deg, ${lesson.color}, ${lesson.color}AA)`, width: done ? "100%" : "0%", transition: "width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }} />
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 3 }}>
-                  {[1,2,3].map(i => <span key={i} style={{ fontSize: 15, filter: done ? "none" : "grayscale(1) opacity(0.15)", transition: "filter 0.3s ease" }}>⭐</span>)}
+  /* ═══ PROGRESS (Enhanced) ═══ */
+  if (screen === "progress") {
+    const overallPercent = activeLessons.length > 0 ? Math.round((completedCount / activeLessons.length) * 100) : 0;
+    const totalWords = activeLessons.reduce((sum, l) => sum + l.phrases.length, 0);
+    const wordsLearned = activeLessons.filter(l => isLessonDone(l.id)).reduce((sum, l) => sum + l.phrases.length, 0);
+
+    return (
+      <div className="mesh-bg" style={{ ...page, background: "var(--bg-app)", padding: "24px 24px 120px" }}>
+        <Toast {...toast} onDismiss={() => setToast(t => ({ ...t, visible: false }))} />
+        <FloatingOrbs count={8} colors={[C.sunYellow, C.grape, C.sky]} />
+        <div style={{ position: "relative", zIndex: 1 }}>
+          <button onClick={() => setScreen("dashboard")} style={{ background: "var(--overlay-subtle)", border: "var(--glass-border)", borderRadius: R.pill, width: 48, height: 48, padding: 0, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 18, marginBottom: 20, color: "var(--text-primary)", backdropFilter: FX.glassBlur, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>←</button>
+
+          {/* Hero stats */}
+          <div style={{ textAlign: "center", marginBottom: 28 }}>
+            <ParentAvatar size={90} uploaded={hasAvatar} name={pName} mood="celebrate" showLabel={false} />
+            <h2 style={{ fontFamily: "'Space Grotesk', 'Nunito', sans-serif", fontSize: 26, fontWeight: 700, letterSpacing: -0.8, color: "var(--text-primary)", margin: "12px 0 6px" }}>{cName}'s <span className="gradient-text">Journey</span></h2>
+            <XPBadge xp={totalXP} dark />
+          </div>
+
+          {/* Overall progress ring */}
+          <GlassCard dark style={{ padding: "24px 20px", marginBottom: 16, textAlign: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 28 }}>
+              <div style={{ position: "relative", width: 100, height: 100 }}>
+                <svg width="100" height="100" viewBox="0 0 100 100">
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="var(--overlay-subtle)" strokeWidth="8" />
+                  <circle cx="50" cy="50" r="42" fill="none" stroke="var(--accent-gold)" strokeWidth="8"
+                    strokeLinecap="round" strokeDasharray={`${overallPercent * 2.64} ${264 - overallPercent * 2.64}`}
+                    transform="rotate(-90 50 50)" style={{ transition: "stroke-dasharray 1s ease" }} />
+                </svg>
+                <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+                  <span style={{ fontFamily: "'Space Grotesk', sans-serif", fontSize: 28, fontWeight: 700, color: "var(--text-primary)", lineHeight: 1 }}>{overallPercent}%</span>
+                  <span style={{ ...T.label, fontSize: 8, color: "var(--text-muted)", letterSpacing: 1.5 }}>COMPLETE</span>
                 </div>
               </div>
+              <div style={{ textAlign: "left" }}>
+                {[
+                  { label: "Lessons Done", value: `${completedCount}/${activeLessons.length}`, color: C.softGreen },
+                  { label: "Words Learned", value: `${wordsLearned}/${totalWords}`, color: C.skyBlue },
+                  { label: "Total XP", value: totalXP, color: C.sunYellow },
+                  { label: "Day Streak", value: `${Math.max(1, completedCount)}`, color: C.coral },
+                ].map(s => (
+                  <div key={s.label} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: s.color, flexShrink: 0 }} />
+                    <span style={{ ...T.body, fontSize: 12, color: "var(--text-muted)", width: 90 }}>{s.label}</span>
+                    <span style={{ fontFamily: "'Nunito', sans-serif", fontSize: 15, fontWeight: 700, color: "var(--text-primary)" }}>{s.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </GlassCard>
+
+          {/* Lesson breakdown */}
+          <h3 style={{ ...T.label, color: "var(--text-muted)", fontSize: 11, letterSpacing: 2, margin: "24px 0 12px", paddingLeft: 4 }}>LESSONS</h3>
+          {activeLessons.map((lesson, idx) => {
+            const done = isLessonDone(lesson.id);
+            const lessonProgress = progress[lesson.id];
+            const lessonScore = lessonProgress?.score || (done ? 100 : 0);
+            const stars = Math.min(3, Math.round((lessonScore / 100) * 3));
+            return (
+              <GlassCard key={lesson.id} dark onClick={() => startLesson(lesson)} style={{ marginBottom: 14, padding: "18px 20px", animation: `slideUp 0.4s ease ${idx * 0.08}s both`, borderLeft: `3px solid ${done ? C.softGreen : lesson.color}40`, borderRadius: `4px ${R.card}px ${R.card}px 4px` }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                  <div style={{ width: 52, height: 52, borderRadius: R.control, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, background: done ? `${C.softGreen}10` : `${lesson.color}08`, border: `1.5px solid ${done ? `${C.softGreen}30` : `${lesson.color}18`}`, transition: "all 0.3s ease" }}>
+                    {done ? "✅" : lesson.icon}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+                      <p style={{ fontFamily: "'Nunito', sans-serif", fontWeight: 700, fontSize: 15, color: "var(--text-primary)", margin: 0 }}>{lesson.title}</p>
+                      {done && <span style={{ ...T.label, fontSize: 10, color: C.softGreen }}>{lessonScore}%</span>}
+                    </div>
+                    <div style={{ height: 5, borderRadius: R.pill, background: "var(--overlay-subtle)", overflow: "hidden" }}>
+                      <div style={{ height: "100%", borderRadius: R.pill, background: done ? `linear-gradient(90deg, ${C.softGreen}, ${C.mint})` : `linear-gradient(90deg, ${lesson.color}, ${lesson.color}AA)`, width: done ? "100%" : "0%", transition: "width 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94)" }} />
+                    </div>
+                    <p style={{ ...T.body, fontSize: 11, color: "var(--text-muted)", margin: "6px 0 0" }}>
+                      {lesson.subtitle} · {lesson.phrases.length} words
+                    </p>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
+                    <div style={{ display: "flex", gap: 2 }}>
+                      {[1,2,3].map(i => <span key={i} style={{ fontSize: 14, filter: done && i <= stars ? "none" : "grayscale(1) opacity(0.15)", transition: "filter 0.3s ease" }}>⭐</span>)}
+                    </div>
+                    <RoundBtn onClick={() => startLesson(lesson)} color={done ? C.softGreen : lesson.color} size={36} icon={done ? "↻" : "→"} />
+                  </div>
+                </div>
+              </GlassCard>
+            );
+          })}
+        </div>
+
+        {/* Bottom Nav (reuse from dashboard) */}
+        <div style={{
+          position: "fixed", bottom: 16, left: 16, right: 16, height: 68,
+          borderRadius: R.bottomNav, background: "var(--glass-bg)", backdropFilter: FX.glassBlur,
+          border: "var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "space-around",
+          zIndex: 20, padding: "0 4px",
+          boxShadow: "0 -2px 20px rgba(0,0,0,0.04), 0 4px 24px rgba(0,0,0,0.06)",
+        }}>
+          {[
+            { icon: "🏠", label: "Home", action: () => setScreen("dashboard"), active: false },
+            { icon: "📊", label: "Progress", action: () => {}, active: true },
+            { icon: "⚙️", label: "Settings", action: () => { setSettingsTab("profile"); setScreen("settings"); }, active: false },
+            { icon: isPlayful ? "\uD83D\uDCDA" : "\uD83C\uDFA8", label: isPlayful ? "Study" : "Playful", action: toggleTheme, active: false },
+          ].map((tab) => (
+            <button key={tab.label} onClick={tab.action} style={{
+              background: tab.active ? "var(--nav-active-bg)" : "none",
+              border: "none", cursor: "pointer",
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+              padding: "8px 18px", fontFamily: "'Inter', sans-serif",
+              borderRadius: R.control, opacity: tab.active ? 1 : 0.55,
+              transition: "all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+            }}>
+              <span style={{ fontSize: 22 }}>{tab.icon}</span>
+              <span style={{ ...T.label, fontSize: 9, letterSpacing: 1, color: tab.active ? "var(--accent-gold)" : "var(--text-muted)" }}>{tab.label}</span>
+              {tab.active && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--accent-gold)", marginTop: -1 }} />}
+            </button>
+          ))}
+        </div>
+        <Styles />
+      </div>
+    );
+  }
+
+  /* ═══ SETTINGS ═══ */
+  if (screen === "settings") return (
+    <div className="mesh-bg" style={{ ...page, background: "var(--bg-app)", padding: "24px 24px 120px" }}>
+      <Toast {...toast} onDismiss={() => setToast(t => ({ ...t, visible: false }))} />
+      <FloatingOrbs count={6} colors={[C.sunYellow, C.grape, C.sky]} />
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 500, margin: "0 auto" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
+          <button onClick={() => setScreen("dashboard")} style={{ background: "var(--overlay-subtle)", border: "var(--glass-border)", borderRadius: R.pill, width: 48, height: 48, padding: 0, cursor: "pointer", fontFamily: "'Inter', sans-serif", fontSize: 18, color: "var(--text-primary)", backdropFilter: FX.glassBlur, display: "flex", alignItems: "center", justifyContent: "center" }}>←</button>
+          <h2 style={{ fontFamily: "'Space Grotesk', 'Nunito', sans-serif", fontSize: 22, fontWeight: 700, color: "var(--text-primary)", margin: 0 }}>Settings</h2>
+          <div style={{ width: 48 }} />
+        </div>
+
+        {/* Settings tabs */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 24, background: "var(--overlay-subtle)", borderRadius: R.pill, padding: 4 }}>
+          {[
+            { key: "profile", label: "Profile", icon: "👤" },
+            { key: "avatar", label: "Avatar", icon: "🎬" },
+            { key: "about", label: "About", icon: "ℹ️" },
+          ].map(tab => (
+            <button key={tab.key} onClick={() => setSettingsTab(tab.key)} style={{
+              flex: 1, padding: "10px 12px", borderRadius: R.pill, border: "none",
+              background: settingsTab === tab.key ? "var(--bg-card)" : "transparent",
+              boxShadow: settingsTab === tab.key ? "var(--card-shadow)" : "none",
+              cursor: "pointer", fontFamily: "'Inter', sans-serif",
+              ...T.label, fontSize: 10, letterSpacing: 0.8,
+              color: settingsTab === tab.key ? "var(--text-primary)" : "var(--text-muted)",
+              transition: "all 0.25s ease", display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+            }}>
+              <span style={{ fontSize: 14 }}>{tab.icon}</span>
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Profile Tab */}
+        {settingsTab === "profile" && (
+          <div style={{ animation: "slideUp 0.3s ease" }}>
+            <div style={{ textAlign: "center", marginBottom: 24 }}>
+              <ParentAvatar size={80} uploaded={hasAvatar} name={pName} showLabel={false} mood="celebrate" ring={false} />
+            </div>
+
+            {[
+              { label: "Parent Name", key: "parentName", placeholder: "e.g. Ama" },
+              { label: "Child's Name", key: "childName", placeholder: "e.g. Kofi" },
+            ].map(f => (
+              <GlassCard key={f.key} dark style={{ padding: "16px 20px", marginBottom: 12, transition: "border 0.2s ease" }}>
+                <label style={{ ...T.label, fontSize: 10, color: "var(--accent-gold)", display: "block", marginBottom: 6, letterSpacing: 1 }}>{f.label.toUpperCase()}</label>
+                <input
+                  value={profile[f.key]}
+                  maxLength={30}
+                  onChange={e => {
+                    const sanitized = sanitizeInput(e.target.value, 30);
+                    setProfile(p => ({ ...p, [f.key]: sanitized }));
+                  }}
+                  placeholder={f.placeholder}
+                  autoComplete="off"
+                  style={{ width: "100%", ...T.body, fontSize: 16, fontWeight: 500, border: "none", outline: "none", color: "var(--text-primary)", background: "transparent", padding: "4px 0", boxSizing: "border-box" }}
+                />
+              </GlassCard>
+            ))}
+
+            <GlassCard dark style={{ padding: "16px 20px", marginBottom: 12 }}>
+              <label style={{ ...T.label, fontSize: 10, color: "var(--accent-gold)", display: "block", marginBottom: 6, letterSpacing: 1 }}>LANGUAGE</label>
+              <select value={profile.language} onChange={e => {
+                const allowed = ["Twi (Ashanti)","Twi (Akuapem)","Fante","Ga","Ewe","Yoruba","Igbo","Hausa"];
+                if (allowed.includes(e.target.value)) setProfile(p => ({ ...p, language: e.target.value }));
+              }} style={{ width: "100%", ...T.body, fontSize: 16, fontWeight: 500, border: "none", outline: "none", color: "var(--text-primary)", background: "transparent", boxSizing: "border-box" }}>
+                {["Twi (Ashanti)","Twi (Akuapem)","Fante","Ga","Ewe","Yoruba","Igbo","Hausa"].map(l => <option key={l} style={{ background: "var(--option-bg)", color: "var(--text-primary)" }}>{l}</option>)}
+              </select>
             </GlassCard>
-          );
-        })}
+
+            <GlassCard dark style={{ padding: "16px 20px", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <div>
+                <p style={{ ...T.pill, fontSize: 14, color: "var(--text-primary)", margin: 0 }}>Theme</p>
+                <p style={{ ...T.body, fontSize: 12, color: "var(--text-muted)", margin: "2px 0 0" }}>{isPlayful ? "Playful Warm" : "Modern Study"}</p>
+              </div>
+              <button onClick={toggleTheme} style={{
+                padding: "8px 20px", borderRadius: R.pill, border: "1.5px solid var(--overlay-strong)",
+                background: "var(--overlay-subtle)", cursor: "pointer",
+                ...T.label, fontSize: 10, color: "var(--text-primary)", fontFamily: "'Inter', sans-serif",
+              }}>{isPlayful ? "📚 Study" : "🎨 Playful"}</button>
+            </GlassCard>
+
+            <div style={{ marginTop: 20 }}>
+              <BigBtn color="var(--accent-gold)" textColor={C.charcoal} onClick={() => {
+                if (isAuthenticated) {
+                  api.updateProfile({
+                    childName: profile.childName,
+                    parentName: profile.parentName,
+                    language: "twi",
+                  }).then(() => showToast("Profile saved!", "success"))
+                    .catch(() => showToast("Failed to save profile", "error"));
+                } else {
+                  showToast("Profile saved locally", "success");
+                }
+              }}>Save Changes</BigBtn>
+            </div>
+
+            <button onClick={() => {
+              if (window.confirm("Are you sure you want to sign out?")) handleLogout();
+            }} style={{
+              width: "100%", marginTop: 16, padding: "14px 0", borderRadius: R.pill,
+              border: `1.5px solid ${C.coral}30`, background: `${C.coral}06`,
+              cursor: "pointer", fontFamily: "'Inter', sans-serif",
+              ...T.pill, fontSize: 14, color: C.coral, fontWeight: 600,
+            }}>Sign Out</button>
+          </div>
+        )}
+
+        {/* Avatar Tab */}
+        {settingsTab === "avatar" && (
+          <div style={{ animation: "slideUp 0.3s ease" }}>
+            <div style={{ textAlign: "center", marginBottom: 24 }}>
+              <ParentAvatar size={120} uploaded={hasAvatar} name={pName} mood="celebrate" showLabel={true} />
+            </div>
+
+            <GlassCard dark style={{ padding: "20px", marginBottom: 16 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+                <span style={{ fontSize: 24 }}>🎬</span>
+                <div>
+                  <p style={{ ...T.pill, fontSize: 14, color: "var(--text-primary)", margin: 0 }}>AI Avatar Status</p>
+                  <p style={{ ...T.body, fontSize: 12, color: "var(--text-muted)", margin: "2px 0 0" }}>
+                    {profile.avatarType === "ai_video" ? "Active — lip-sync videos ready" :
+                     profile.avatarType === "generating" ? "Generating..." :
+                     "Not set up — using cartoon avatar"}
+                  </p>
+                </div>
+              </div>
+              {profile.avatarType === "ai_video" && (
+                <div style={{ padding: "12px 16px", borderRadius: R.control, background: "var(--success-bg)", border: `1px solid var(--success-border)` }}>
+                  <p style={{ ...T.body, fontSize: 12, color: C.softGreen, margin: 0, fontWeight: 600 }}>
+                    ✅ {Object.values(avatarVideos).filter(v => v.status === "ready" || v.status === "tts_only").length} phrase videos generated
+                  </p>
+                </div>
+              )}
+            </GlassCard>
+
+            <BigBtn color="var(--accent-gold)" textColor={C.charcoal} onClick={() => {
+              setSetupStep(2);
+              setScreen("setup");
+            }} style={{ marginBottom: 12 }}>
+              {hasAvatar ? "Re-upload Video" : "Upload Video"}
+            </BigBtn>
+
+            {sourceVideoId && (
+              <BigBtn color="transparent" textColor="var(--text-primary)" onClick={async () => {
+                try {
+                  setIsGenerating(true);
+                  setGenerationProgress({ total: 0, completed: 0, percent: 0, status: "processing" });
+                  const result = await api.startGeneration(sourceVideoId);
+                  setGenerationJobId(result.jobId);
+                  setGenerationProgress({ total: result.totalPhrases, completed: 0, percent: 0, status: "processing" });
+                  setSetupStep(3);
+                  setScreen("setup");
+                  showToast("Generation started!", "success");
+                } catch (err) {
+                  setIsGenerating(false);
+                  showToast(err.message || "Generation failed", "error");
+                }
+              }} style={{ boxShadow: "none", border: "1.5px solid var(--overlay-strong)" }}>
+                🔄 Regenerate AI Tutor
+              </BigBtn>
+            )}
+          </div>
+        )}
+
+        {/* About Tab */}
+        {settingsTab === "about" && (
+          <div style={{ animation: "slideUp 0.3s ease" }}>
+            <GlassCard dark style={{ padding: "24px 20px", textAlign: "center", marginBottom: 16 }}>
+              <BirdBuddy size={56} />
+              <h3 style={{ fontFamily: "'Space Grotesk', 'Nunito', sans-serif", fontSize: 28, fontWeight: 700, color: "var(--text-primary)", margin: "12px 0 4px", letterSpacing: -1 }}>Ɔkasa!</h3>
+              <p style={{ ...T.body, fontSize: 13, color: "var(--text-muted)", margin: "0 0 16px" }}>Mother Tongue Tutor · v1.0</p>
+              <p style={{ ...T.body, fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7 }}>
+                Ɔkasa helps diaspora children learn Ghanaian languages through their parents' voice and face. Using AI, we create personalized video tutors so kids can learn from the people they love most.
+              </p>
+            </GlassCard>
+
+            <GlassCard dark style={{ padding: "16px 20px", marginBottom: 12 }}>
+              <p style={{ ...T.label, fontSize: 10, color: "var(--accent-gold)", letterSpacing: 1, margin: "0 0 8px" }}>FEATURES</p>
+              {[
+                { icon: "🎬", text: "AI lip-sync parent avatar" },
+                { icon: "🔊", text: "Twi text-to-speech" },
+                { icon: "🎤", text: "Speech recognition practice" },
+                { icon: "📊", text: "Progress & XP tracking" },
+                { icon: "🧠", text: "Watch → Repeat → Quiz learning" },
+              ].map((f, i) => (
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: i < 4 ? "1px solid var(--overlay-subtle)" : "none" }}>
+                  <span style={{ fontSize: 16 }}>{f.icon}</span>
+                  <span style={{ ...T.body, fontSize: 13, color: "var(--text-secondary)" }}>{f.text}</span>
+                </div>
+              ))}
+            </GlassCard>
+
+            <GlassCard dark style={{ padding: "16px 20px" }}>
+              <p style={{ ...T.label, fontSize: 10, color: "var(--accent-gold)", letterSpacing: 1, margin: "0 0 8px" }}>LANGUAGES SUPPORTED</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {["Twi", "Fante", "Ga", "Ewe", "Yoruba", "Igbo", "Hausa"].map(lang => (
+                  <span key={lang} style={{
+                    padding: "6px 14px", borderRadius: R.pill, fontSize: 12, fontWeight: 600,
+                    background: lang === "Twi" ? "var(--accent-gold)" : "var(--overlay-subtle)",
+                    color: lang === "Twi" ? C.charcoal : "var(--text-secondary)",
+                    fontFamily: "'Inter', sans-serif",
+                  }}>{lang}{lang === "Twi" ? " ✓" : ""}</span>
+                ))}
+              </div>
+            </GlassCard>
+          </div>
+        )}
+      </div>
+
+      {/* Bottom Nav */}
+      <div style={{
+        position: "fixed", bottom: 16, left: 16, right: 16, height: 68,
+        borderRadius: R.bottomNav, background: "var(--glass-bg)", backdropFilter: FX.glassBlur,
+        border: "var(--glass-border)", display: "flex", alignItems: "center", justifyContent: "space-around",
+        zIndex: 20, padding: "0 4px",
+        boxShadow: "0 -2px 20px rgba(0,0,0,0.04), 0 4px 24px rgba(0,0,0,0.06)",
+      }}>
+        {[
+          { icon: "🏠", label: "Home", action: () => setScreen("dashboard"), active: false },
+          { icon: "📊", label: "Progress", action: () => setScreen("progress"), active: false },
+          { icon: "⚙️", label: "Settings", action: () => {}, active: true },
+          { icon: isPlayful ? "\uD83D\uDCDA" : "\uD83C\uDFA8", label: isPlayful ? "Study" : "Playful", action: toggleTheme, active: false },
+        ].map((tab) => (
+          <button key={tab.label} onClick={tab.action} style={{
+            background: tab.active ? "var(--nav-active-bg)" : "none",
+            border: "none", cursor: "pointer",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+            padding: "8px 18px", fontFamily: "'Inter', sans-serif",
+            borderRadius: R.control, opacity: tab.active ? 1 : 0.55,
+            transition: "all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+          }}>
+            <span style={{ fontSize: 22 }}>{tab.icon}</span>
+            <span style={{ ...T.label, fontSize: 9, letterSpacing: 1, color: tab.active ? "var(--accent-gold)" : "var(--text-muted)" }}>{tab.label}</span>
+            {tab.active && <div style={{ width: 4, height: 4, borderRadius: "50%", background: "var(--accent-gold)", marginTop: -1 }} />}
+          </button>
+        ))}
       </div>
       <Styles />
     </div>
@@ -1808,6 +2267,7 @@ function Styles() {
       @keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
       @keyframes progressFill { from { width: 0%; } }
       @keyframes meshFloat { 0%, 100% { transform: translate(0, 0) rotate(0deg); } 33% { transform: translate(2%, -1%) rotate(0.5deg); } 66% { transform: translate(-1%, 1%) rotate(-0.3deg); } }
+      @keyframes slideDown { from { opacity: 0; transform: translateX(-50%) translateY(-20px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
       button { -webkit-tap-highlight-color: transparent; }
       button:hover:not(:disabled) { filter: brightness(1.05); }
       button:active:not(:disabled) { transform: translateY(1px) scale(0.97) !important; transition: transform 0.08s ease !important; }
